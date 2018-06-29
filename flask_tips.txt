@@ -1,0 +1,24 @@
+sudo apt-get install python3-venv
+ 
+mkdir myproject
+cd myproject
+python3 -m venv venv
+
+cd myproject
+. venv/bin/activate
+
+pip install Flask
+
+
+https://www.ntu.edu.sg/home/ehchua/programming/webprogramming/Python3_Flask.html
+
+https://flask-restful.readthedocs.io/en/latest/quickstart.html
+
+Excellent!!!
+https://blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-i-hello-world
+https://blog.miguelgrinberg.com/post/designing-a-restful-api-with-python-and-flask
+https://blog.miguelgrinberg.com/post/writing-a-javascript-rest-client
+https://blog.miguelgrinberg.com/post/designing-a-restful-api-using-flask-restful
+
+Validation:
+https://nunie123.github.io/sqlalchemy-validation.html
