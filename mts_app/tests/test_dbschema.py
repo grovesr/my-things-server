@@ -6,43 +6,14 @@ Created on Jun 22, 2018
 import unittest
 from mts_app.tests.drop_all_tables import drop_all_tables
 
-from mts_app import app, db
+from mts_app import db, create_app
 from mts_app.models import *
 from mts_app.config import Config
 from mts_app.tests.helpers import * 
+from mts_app.tests.MyThingsTest import MyThingsTest
 from sqlalchemy.exc import IntegrityError
 
-class DBSchemaTests(unittest.TestCase):
-    adminUser = None
-    rootNode = None
-    ############################
-    #### setup and teardown ####
-    ############################
- 
-    # executed prior to each test
-    def setUp(self):
-        app.config['SERVER_NAME'] = 'localhost:5000'
-        app.config['TESTING'] = True
-        app.config['WTF_CSRF_ENABLED'] = False
-        app.config['DEBUG'] = False
-        app.config['SQLALCHEMY_DATABASE_URI'] = ('mysql://' + 
-            Config.DATABASE_USER + ':' +
-            Config.DATABASE_PASSWORD + '@' + 
-            Config.TEST_DB)
-        self.app = app.test_client()
-        db.session.close()
-        drop_all_tables(db)
-        db.create_all()
-        self.adminUser = createTestAdminUser(username='Admin', email='admin@example.com', password="test")
-        self.rootNode = createRootNode()
-        self.assertEqual(app.debug, False)
- 
-    # executed after each test
-    def tearDown(self):
-        db.session.close()
-        drop_all_tables(db)
-        pass
- 
+class DBSchemaTests(MyThingsTest):
  
 ###############
 #### tests ####

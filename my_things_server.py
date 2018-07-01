@@ -8,12 +8,13 @@ Created on Jun 19, 2018
 """
 hello_flask: First Python-Flask webapp
 """
-from mts_app.config import Config
+import os
 from mts_app import db
-from mts_app import app
+from mts_app import create_app
+from mts_app.models import User, Node
+from flask_migrate import Migrate
 
-#db.create_all()
-
+app=create_app(os.getenv('FLASK_CONFIG') or 'default')
+migrate = Migrate(app, db)
 if __name__ == '__main__':
-    app.run(debug = Config.DEBUG)
-    #app.run(debug = 0)
+    app.run()
