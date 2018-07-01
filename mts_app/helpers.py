@@ -3,7 +3,7 @@ Created on Jun 29, 2018
 
 @author: grovesr
 '''
-from mts_app import app, db
+from mts_app import db
 from mts_app.models import User, Node
 from mts_app.config import Config
 from werkzeug.exceptions import InternalServerError
@@ -27,18 +27,3 @@ def checkDatabasePrerequisites():
         rootNode = Node(name=Config.ROOT_NODE_NAME, owner=admin)
         db.session.add(rootNode)
         db.session.commit()
-
-def getAdminAndRootNode():
-    adminQuery=User.query.filter_by(username='Admin')
-    if adminQuery.count() > 0:
-        admin = adminQuery.first()
-    else:
-        raise InternalServerError('Admin user not in database. Something is wrong!!')
-    rootNodeQuery = Node.query.filter_by(name=Config.ROOT_NODE_NAME, owner=admin)
-    if rootNodeQuery.count() == 1:
-        rootNode = rootNodeQuery.first()
-    if rootNodeQuery.count() == 0:
-        raise InternalServerError('Root node not in database. Something is wrong!!')
-    if rootNodeQuery.count() > 1:
-        raise InternalServerError('RMore than one Root node in database. Something is wrong!!')
-    return (admin, rootNode)

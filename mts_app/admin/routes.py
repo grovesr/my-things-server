@@ -4,19 +4,75 @@ Created on Jun 20, 2018
 @author: grovesr
 '''
 
-from mts_app import app, db, auth
+#from mts_app import app, db, auth
+from mts_app import db
+from mts_app.admin import bp as admin_bp
+from flask import current_app
 from mts_app.models import User
-from mts_app.route_helpers import *
-from mts_app.config import Config
+from flask import make_response
 from flask import jsonify
 from flask import request
+from flask_httpauth import HTTPBasicAuth
+from werkzeug.exceptions import NotFound
+from werkzeug.exceptions import BadRequest
+from werkzeug.exceptions import Forbidden
+from werkzeug.exceptions import MethodNotAllowed
+from werkzeug.security import check_password_hash
 
+auth = HTTPBasicAuth()
 
+@admin_bp.errorhandler(404)
+def notFound(error):
+    return make_response(jsonify({'error': error.description}), 404)
+
+@admin_bp.errorhandler(405)
+def methodNotAllowed(error):
+    return make_response(jsonify({'error': error.description}), 405)
+
+@admin_bp.errorhandler(400)
+def invalidFormat(error):
+    return make_response(jsonify({'error': error.description}), 400)
+
+@admin_bp.errorhandler(403)
+def forbidden(error):
+    return make_response(jsonify({'error': error.description}), 403)
+
+@admin_bp.errorhandler(500)
+def serverError(error):
+    return make_response(jsonify({'error': error.description}), 500)
+
+@auth.verify_password
+def verify_password(username, password):
+    userQuery=User.query.filter_by(username=username)
+    if userQuery.count() > 0:
+        return check_password_hash(userQuery.first().password_hash, password)
+    return False
+
+@auth.error_handler
+def unauthorized():
+    return make_response(jsonify({'error': 'Unauthorized access'}), 403)
+
+def validateUser():
+    queryUser = User.query.filter_by(username=auth.username())
+    if queryUser.count() == 0:
+        raise Forbidden('Permission denied. Request API access.')
+
+def validateAdmin():
+    validateUser()
+    queryUser = User.query.filter_by(username=auth.username())
+    if queryUser.count() > 0 and not queryUser.first().isAdmin:
+        raise Forbidden('User is not admin')
+
+def validateEditor():
+    validateUser()
+    queryUser = User.query.filter_by(username=auth.username())
+    if queryUser.count() > 0 and not queryUser.first().canEdit:
+        raise Forbidden('User doesn''t have edit permission')
   
-@app.route(Config.API_PREFIX + '/admin/add/user', methods=['POST'])
+@admin_bp.route('/add/user', methods=['POST'])
 @auth.login_required
 def addUser():
-    checkAdmin()
+    validateAdmin()
     if not request.json or not 'username' in request.json or not 'password' in request.json:
         raise BadRequest('No username and/or pasword specified in add/user request')
     try:
@@ -45,29 +101,31 @@ def addUser():
     db.session.commit()
     return jsonify(user.buildPublicJson()), 201
 
-@app.route(Config.API_PREFIX + '/admin/check/user/<string:username>', methods=['GET'])
+@admin_bp.route('/check/user/<string:username>', methods=['GET'])
 @auth.login_required
 def checkUser(username):
-    checkAdmin()
-    if not User.query.filter_by(username=username).count():
+    validateAdmin()
+    userQuery = User.query.filter_by(username=username)
+    if userQuery.count() == 0:
         raise NotFound('User not found')
-    returnJson = {username + ' exists': User.query.filter_by(username=username).count() == 1}
+    user = userQuery.first()
+    returnJson = {user.username + ' exists': userQuery.count() == 1}
     return jsonify(returnJson)
 
-@app.route(Config.API_PREFIX + '/admin/get/user/<string:username>', methods=['GET'])
+@admin_bp.route('/get/user/<string:username>', methods=['GET'])
 @auth.login_required
 def getUser(username):
-    checkAdmin()
+    validateAdmin()
     userQuery = User.query.filter_by(username=username)
     if not userQuery.count():
         raise NotFound('User not found')
     user = userQuery.first()
     return jsonify(user.buildPublicJson())
 
-@app.route(Config.API_PREFIX + '/admin/get/users', methods=['GET'])
+@admin_bp.route('/get/users', methods=['GET'])
 @auth.login_required
 def getUsers():
-    checkAdmin()
+    validateAdmin()
     users = User.query.all()
     if len(users) == 0:
         raise NotFound('No users found')
@@ -77,21 +135,21 @@ def getUsers():
         usersJson['users'].append(user.buildPublicJson())
     return jsonify(usersJson)
 
-@app.route(Config.API_PREFIX + '/admin/delete/user/<string:username>', methods=['DELETE'])
+@admin_bp.route('/delete/user/<string:username>', methods=['DELETE'])
 @auth.login_required
 def deleteUser(username):
-    checkAdmin()
+    validateAdmin()
     userQuery = User.query.filter_by(username=username)
     if not userQuery.count():
         raise NotFound('User not found')
     db.session.delete(userQuery.first())
     db.session.commit()
-    return jsonify({'result': True})
+    return jsonify({'result': userQuery.count() == 0})
 
-@app.route(Config.API_PREFIX + '/admin/update/user/<string:username>', methods=['PUT'])
+@admin_bp.route('/update/user/<string:username>', methods=['PUT'])
 @auth.login_required
 def updateUser(username):
-    checkAdmin()
+    validateAdmin()
     userQuery = User.query.filter_by(username=username)
     if not userQuery.count():
         raise NotFound('User not found')

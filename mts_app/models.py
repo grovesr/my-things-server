@@ -24,7 +24,7 @@ class Node(db.Model):
     review =        db.Column(db.Text,        unique=False, nullable=True)
     rating =        db.Column(db.Integer,     unique=False, nullable=True)
     ownerId =       db.Column(db.Integer, db.ForeignKey('user.id'), unique=False, nullable=False)
-    parentId =      db.Column(db.Integer, db.ForeignKey('node.id'), unique=False, nullable=False)
+    parentId =      db.Column(db.Integer, db.ForeignKey('node.id'), unique=False, nullable=True)
     owner =         db.relationship('User', lazy=True)
     children =      db.relationship('Node', backref=backref('parent', remote_side=[id]),
                                     single_parent=True, lazy=True, cascade="all, delete, delete-orphan")
@@ -94,6 +94,7 @@ class Node(db.Model):
                 'nodeInfo': json.dumps(self.nodeInfo),
                 'haveTried':self.haveTried, 
                 'rating':self.rating,
+                'review':self.review,
                 'ownerName': self.owner.username,
                 'ownerId': self.owner.id,
                 'parentName': self.parent.name,
@@ -101,8 +102,7 @@ class Node(db.Model):
     
     def buildPublicJson(self):
         publicJson = self.buildJson()
-        publicJson.pop('id', None)
-        publicJson['uri'] = url_for('getNode', nodeName=self.name, owner=self.owner.username, _external=True)
+        publicJson['uri'] = url_for('main.getNode', nodeId=self.id, _external=True)
         return publicJson
 
 class User(db.Model):
@@ -157,6 +157,5 @@ class User(db.Model):
     
     def buildPublicJson(self):
         publicJson = self.buildJson()
-        publicJson.pop('id', None)
-        publicJson['uri'] = url_for('getUser', username=self.username, _external=True)
+        publicJson['uri'] = url_for('admin.getUser', username=self.username, _external=True)
         return publicJson
