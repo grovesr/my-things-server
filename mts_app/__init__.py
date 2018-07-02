@@ -21,7 +21,7 @@ from mts_app.config import config
 
 db = SQLAlchemy()
 
-def create_app(config_name):
+def create_app(config_name = os.environ.get('FLASK_ENV') or 'development'):
     #from mts_app.models import User, Node
     # create and configure the app
     app = Flask(__name__)
@@ -53,7 +53,7 @@ def create_app(config_name):
             if app.config['EMAIL_HOST_USER'] or app.config['EMAIL_HOST_PASSWORD']:
                 auth = (app.config['EMAIL_HOST_USER'], app.config['EMAIL_HOST_PASSWORD'])
             secure = None
-            if Config.EMAIL_USE_TLS:
+            if app.config['EMAIL_USE_TLS']:
                 secure = ()
             mail_handler = SMTPHandler(
                 mailhost=(app.config['EMAIL_HOST'], app.config['EMAIL_PORT']),
@@ -63,6 +63,8 @@ def create_app(config_name):
             mail_handler.setLevel(logging.ERROR)
             app.logger.addHandler(mail_handler)
     from mts_app.helpers import checkDatabasePrerequisites
+    with app.app_context():
+        db.create_all()
     if not app.config['TESTING']:
         with app.app_context():
             checkDatabasePrerequisites()
