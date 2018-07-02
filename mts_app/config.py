@@ -64,25 +64,35 @@ class ProductionConfig(Config):
     @classmethod
     def init_app(cls, app):
         Config.init_app(app)
-
-        # email errors to the administrators
         import logging
         from logging.handlers import SMTPHandler
-        credentials = None
-        secure = None
-        if getattr(cls, 'MAIL_USERNAME', None) is not None:
-            credentials = (cls.MAIL_USERNAME, cls.MAIL_PASSWORD)
-            if getattr(cls, 'MAIL_USE_TLS', None):
+        from logging.handlers import RotatingFileHandler
+        if not os.path.exists('logs'):
+            os.mkdir('logs')
+        file_handler = RotatingFileHandler('logs/my-things-server.log', maxBytes=10240,
+                                           backupCount=10)
+        file_handler.setFormatter(logging.Formatter(
+            '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'))
+        file_handler.setLevel(logging.INFO)
+        app.logger.addHandler(file_handler)
+     
+        app.logger.setLevel(logging.INFO)
+        app.logger.info('My Things Server startup')
+         
+        if cls.EMAIL_HOST:
+            auth = None
+            if cls.EMAIL_HOST_USER or cls.EMAIL_HOST_PASSWORD:
+                auth = (cls.EMAIL_HOST_USER, cls.EMAIL_HOST_PASSWORD)
+            secure = None
+            if cls.EMAIL_USE_TLS:
                 secure = ()
-        mail_handler = SMTPHandler(
-            mailhost=(cls.MAIL_SERVER, cls.MAIL_PORT),
-            fromaddr=cls.FLASKY_MAIL_SENDER,
-            toaddrs=[cls.FLASKY_ADMIN],
-            subject=cls.FLASKY_MAIL_SUBJECT_PREFIX + ' Application Error',
-            credentials=credentials,
-            secure=secure)
-        mail_handler.setLevel(logging.ERROR)
-        app.logger.addHandler(mail_handler)
+            mail_handler = SMTPHandler(
+                mailhost=(cls.EMAIL_HOST, cls.EMAIL_PORT),
+                fromaddr='no-reply@' + cls.EMAIL_HOST,
+                toaddrs=cls.ADMINS, subject='My Things Server Failure',
+                credentials=auth, secure=secure)
+            mail_handler.setLevel(logging.ERROR)
+            app.logger.addHandler(mail_handler)
 
 
 class HerokuConfig(ProductionConfig):
