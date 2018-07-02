@@ -5,7 +5,7 @@ Created on Jun 20, 2018
 '''
 
 #from mts_app import app, db, auth
-from mts_app import db
+from mts_app.models import db
 from mts_app.admin import bp as admin_bp
 from flask import current_app
 from mts_app.models import User

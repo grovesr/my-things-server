@@ -3,7 +3,7 @@ Created on Jun 25, 2018
 
 @author: grovesr
 '''
-from mts_app import db
+from mts_app.models import db
 from mts_app.models import *
 
 def create_user_with_index(username='Test', userindex=1):

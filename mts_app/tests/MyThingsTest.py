@@ -5,8 +5,8 @@ Created on Jul 1, 2018
 '''
 
 import unittest
-from mts_app.models import User, Node
-from mts_app import create_app, db
+from mts_app.models import User, Node, db
+from mts_app import create_app
 from mts_app.tests.drop_all_tables import drop_all_tables
 from flask import current_app
 

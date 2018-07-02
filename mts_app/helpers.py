@@ -3,7 +3,7 @@ Created on Jun 29, 2018
 
 @author: grovesr
 '''
-from mts_app import db
+from mts_app.models import db
 from mts_app.models import User, Node
 from mts_app.config import Config
 from werkzeug.exceptions import InternalServerError

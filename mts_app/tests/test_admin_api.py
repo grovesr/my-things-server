@@ -5,8 +5,8 @@ Created on Jun 22, 2018
 '''
 import unittest
 from mts_app.tests.drop_all_tables import drop_all_tables
-from mts_app import db, create_app
-from mts_app.models import *
+from mts_app import  create_app
+from mts_app.models import User, Node, db
 from mts_app.config import Config 
 from mts_app.tests.helpers import *
 from mts_app.tests.MyThingsTest import MyThingsTest

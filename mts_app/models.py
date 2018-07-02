@@ -6,13 +6,17 @@ Created on Jun 20, 2018
 import re
 import json
 from flask.helpers import url_for
-from mts_app import db
+#from mts_app import db
 from sqlalchemy.orm import backref
 from sqlalchemy.orm import validates
 from sqlalchemy import UniqueConstraint
 from sqlalchemy.dialects.mysql import JSON
 from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy.sql.functions import coalesce
+from flask_sqlalchemy import SQLAlchemy
+
+db = SQLAlchemy()
+
 
 class Node(db.Model):
     id =            db.Column(db.Integer,     primary_key=True, nullable=False)

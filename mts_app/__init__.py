@@ -2,6 +2,8 @@
 
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
+import flask_migrate
+from flask_migrate import Migrate
 import logging
 from logging.handlers import SMTPHandler
 from logging.handlers import RotatingFileHandler
@@ -19,7 +21,9 @@ with open(os.path.join(os.path.dirname(os.path.dirname(__file__)) + '/' + 'mts_a
     
 from mts_app.config import config
 
-db = SQLAlchemy()
+#db = SQLAlchemy()
+migrate = Migrate()
+#from mts_app import models
 
 def create_app(config_name = os.environ.get('FLASK_ENV') or 'development'):
     #from mts_app.models import User, Node
@@ -27,8 +31,9 @@ def create_app(config_name = os.environ.get('FLASK_ENV') or 'development'):
     app = Flask(__name__)
     app.config.from_object(config[config_name])
     config[config_name].init_app(app)
+    from mts_app.models import db
     db.init_app(app)
-    
+    migrate.init_app(app, db)
     from mts_app.admin import bp as admin_bp
     app.register_blueprint(admin_bp, url_prefix = '/admin')
     
