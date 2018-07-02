@@ -11,7 +11,7 @@ from sqlalchemy import sql
 import sqlalchemy
 
 # define current version
-VERSION=('1.0.0.0','2018/07/01','completed initial unit tests and have functional rest service deployment')
+VERSION=('1.0.0','2018/07/01','completed initial unit tests and have functional rest service deployment')
 
 # get secrets
 with open(os.path.join(os.path.dirname(os.path.dirname(__file__)) + '/' + 'mts_app' + '/.secrets.json')) as f:
