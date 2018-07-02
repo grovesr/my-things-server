@@ -20,5 +20,9 @@ https://blog.miguelgrinberg.com/post/designing-a-restful-api-with-python-and-fla
 https://blog.miguelgrinberg.com/post/writing-a-javascript-rest-client
 https://blog.miguelgrinberg.com/post/designing-a-restful-api-using-flask-restful
 
+note: to complete the server install on vagrant and virtualbox I had to do:
+sudo apt-get install gcc
+before trying to install mysqlclient
+
 Validation:
 https://nunie123.github.io/sqlalchemy-validation.html
