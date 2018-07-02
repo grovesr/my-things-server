@@ -201,6 +201,14 @@ class AdminApiTests(MyThingsTest):
         with current_app.app_context():
             self.assertEqual(url_for('admin.getUser', username=user.username, _external=True), response.json['uri'])
             
+    def test_add_user_bad_email(self):
+        data = {"username":"Test1", "email":"foo", "password":"test"}
+        response = self.client.post('/admin/add/user', headers=authHeaders,
+                                 data=json.dumps(data), content_type='application/json')
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('error', response.json)
+        self.assertIn('bad email format', response.json['error'])                 
+            
     def test_add_duplicate_user(self):
         data = {"username":"Test1", "email":"test1@example.com", "password":"test"}
         response = self.client.post('/admin/add/user', headers=authHeaders,

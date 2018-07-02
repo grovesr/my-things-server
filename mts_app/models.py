@@ -108,7 +108,7 @@ class Node(db.Model):
 class User(db.Model):
     id =            db.Column(db.Integer, primary_key=True)
     username =      db.Column(db.String(64),  index=True, unique=True, nullable=False)
-    email =         db.Column(db.String(120), index=True, unique=True, nullable=False)
+    email =         db.Column(db.String(120),             unique=False, nullable=False)
     password_hash = db.Column(db.String(128),             unique=False, nullable=False)
     canEdit =       db.Column(db.Boolean,                 unique=False, nullable=False, default=False)
     isAdmin =       db.Column(db.Boolean,                 unique=False, nullable=False, default=False)

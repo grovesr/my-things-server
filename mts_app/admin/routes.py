@@ -77,16 +77,16 @@ def addUser():
         raise BadRequest('No username and/or pasword specified in add/user request')
     try:
         user = User(username=request.json['username'])
-        user.set_password(request.json['password'])
     except AssertionError as e:
         raise BadRequest('username error: ' + str(e))
+    user.set_password(request.json['password'])
     if User.query.filter_by(username=request.json['username']).count():
         raise BadRequest('User already exists')
     if 'email' in request.json:
         try:
             user.email = request.json['email']
         except AssertionError as e:
-            raise BadRequest(str(e))
+            raise BadRequest('bad email format' + str(e))
     if 'isAdmin' in request.json:
         try:
             user.isAdmin = request.json['isAdmin']
