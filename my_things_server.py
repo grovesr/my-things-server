@@ -16,9 +16,8 @@ from mts_app.helpers import checkDatabasePrerequisites
 from flask_migrate import Migrate
 
 app=create_app(os.getenv('FLASK_CONFIG') or 'default')
-
+if not app.config['TESTING']:
+    with app.app_context():
+        checkDatabasePrerequisites()
 if __name__ == '__main__':
-    if not app.config['TESTING']:
-        with app.app_context():
-            checkDatabasePrerequisites()
     app.run()
