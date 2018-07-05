@@ -13,8 +13,8 @@ server {
     server_name _;
 
     # location of the self-signed SSL certificate
-    ssl_certificate /home/vagrant/my-things-server/certs/cert.pem;
-    ssl_certificate_key /home/vagrant/my-things-server/certs/key.pem;
+    ssl_certificate /home/ubuntu/my-things-server/certs/cert.pem;
+    ssl_certificate_key /home/ubuntu/my-things-server/certs/key.pem;
 
     # write access and error logs to /var/log
     access_log /var/log/my-things-server_access.log;
