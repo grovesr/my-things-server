@@ -23,3 +23,6 @@ logs/
 
 .settings
 .*project
+
+deployment/vagrant/.vagrant/
+deployment/vagrant/*log

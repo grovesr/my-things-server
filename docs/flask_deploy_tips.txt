@@ -1,0 +1,69 @@
+1. install vagrant https://www.vagrantup.com/
+2. install virtualbox https://www.virtualbox.org/
+3. in a deployment directory create a vagrant directory
+4. place the ollowing in a file called vagrantfile
+
+Vagrant.configure("2") do |config|
+  config.vm.box = "ubuntu/xenial64"
+  config.vm.network "private_network", ip: "192.168.33.10"
+  config.vm.provider "virtualbox" do |vb|
+    vb.memory = "1024"
+  end
+endVagrant.configure("2") do |config|
+  config.vm.box = "ubuntu/xenial64"
+  config.vm.network "private_network", ip: "192.168.33.10"
+  config.vm.provider "virtualbox" do |vb|
+    vb.memory = "1024"
+  end
+end
+
+5. in the vagrant dir run "vagrant up" to create the virtual machine
+6. ssh into the new virtual machine "vagrant ssh"
+ you will be logged in as user vagrant. !!Before doing anything else sudo su ubuntu to switch to the ubuntu userid!!
+7. to disable root login for security edit "sudo nano /etc/ssh/sshd_config" and replace setting for PermitRootLogin with:
+PermitRootLogin no
+8. to disable password logins for security, in the same file change the value for PasswordAuthentication with:
+PasswordAuthentication no
+9. save the file and then restart SSH service "sudo service ssh restart"
+10. install and configue the firewall
+sudo apt-get install -y ufw
+sudo ufw allow ssh
+sudo ufw allow http
+sudo ufw allow 443/tcp
+sudo ufw --force enable
+sudo ufw status
+11. sudo apt-get -y update
+12. sudo apt-get -y install gcc (needed for mysqlclient install later)
+13. sudo apt-get -y install python3 python3-venv python3-dev
+14. sudo apt-get -y install mysql-server postfix supervisor nginx git (take defaults, add mysql password)
+15. sudo apt-get -y install nginx-extras (this provides access to the headers-more nging module that is needed for CORS headers on non-200 HTTP responses)
+15a. sudo apt-get -y install libmysqlclient-dev (also needed to get msqlclient to pip install"
+16. make sure to cd /home/ubuntu (ubuntu is the sudo user)
+17. git clone https://github.com/grovesr/my-things-server
+18. cd my-things-server
+19. python3 -m venv venv
+20. . venv/bin/activate
+21. pip install -r requirements.txt
+22. pip install gunicorn pymysql
+23. echo "export FLASK_APP=my_things_server.py" >> ~/.profile
+24. . ~/.profile
+25. . venv/bin/activate
+26. mysql -u root -p
+27. set up the database
+create database my_things character set utf8 collate utf8_bin;
+create user 'grovesr'@'localhost' identified by 'zse45rdx';
+grant all privileges on my_things.* to 'grovesr'@'localhost';
+flush privileges;
+create database my_things_test character set utf8 collate utf8_bin;
+grant all privileges on my_things_test.* to 'grovesr'@'localhost';
+flush privileges;
+quit;
+28. copy the .secrets.json file into the deployment/vagrant directory
+29. sudo mv /vagrant/.secrets.json mts_app
+30. flask db upgrade
+31. sudo cp deployment/supervisor/conf.d/my-things-server.conf  /etc/supervisor/conf.d/
+32. sudo supervisorctl reload
+33. sudo cp deployment/nginx/sites-enabled/my-things-server /etc/nginx/sites-enabled/
+34. sudo seervice nginx reload
+
+
