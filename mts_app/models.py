@@ -14,6 +14,8 @@ from sqlalchemy.dialects.mysql import JSON
 from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy.sql.functions import coalesce
 from flask_sqlalchemy import SQLAlchemy
+from dateutil.parser import parse
+import datetime
 
 db = SQLAlchemy()
 
@@ -25,8 +27,10 @@ class Node(db.Model):
     description =   db.Column(db.Text,        unique=False, nullable=True)
     nodeInfo =      db.Column(JSON,           unique=False, nullable=True)
     haveTried =     db.Column(db.Boolean,     unique=False, nullable=True, default=False)
+    dateTried =     db.Column(db.Date,        unique=False, nullable=True)
     review =        db.Column(db.Text,        unique=False, nullable=True)
     rating =        db.Column(db.Integer,     unique=False, nullable=True)
+    dateReviewed =  db.Column(db.Date,        unique=False, nullable=True)
     ownerId =       db.Column(db.Integer, db.ForeignKey('user.id'), unique=False, nullable=False)
     parentId =      db.Column(db.Integer, db.ForeignKey('node.id'), unique=False, nullable=True)
     owner =         db.relationship('User', lazy=True)
@@ -74,11 +78,23 @@ class Node(db.Model):
             raise AssertionError('haveTried must resolve to a Boolean type')
         return haveTried
     
+    @validates('dateTried')
+    def validate_dateTried(self, key, dateTried):
+        if not isinstance(dateTried, datetime.date):
+            raise AssertionError('Provided dateTried is not a valid date format')    
+        return dateTried
+    
     @validates('review')
     def validate_review(self, key, review):
         if not isinstance(review, str):
             raise AssertionError('Provided review is not a string')    
         return review
+    
+    @validates('dateReviewed')
+    def validate_dateReviewed(self, key, dateReviewed):
+        if not isinstance(dateReviewed, datetime.date):
+            raise AssertionError('Provided dateTried is not a valid date format')    
+        return dateReviewed
     
     @validates('rating')
     def validate_rating(self, key, rating):
@@ -86,22 +102,56 @@ class Node(db.Model):
             raise AssertionError('Provided rating must be a number between 0 and 10')    
         return rating
     
+    @classmethod
+    def validSearchFields(self):
+        return ['id',
+                'name',
+                'type',
+                'description',
+                'haveTried',
+                'dateTried',
+                'review',
+                'dateReviewed',
+                'rating',
+                'ownerId',
+                'parentId']
+    
+    @classmethod
+    def validOrderByFields(self):
+        return ['name',
+                'type',
+                'rating']
+    
     def buildJson(self):
         if self.parent is None:
             parentId = ''
         else:
             parentId = self.parent.id
+        if self.dateTried is None:
+            dateTried = 'None'
+        else:
+            dateTried = self.dateTried.strftime('%Y/%m/%d')
+        if self.dateReviewed is None:
+            dateReviewed = 'None'
+        else:
+            dateReviewed = self.dateReviewed.strftime('%Y/%m/%d')
+        if self.parent:
+            parent = self.parent.name
+        else:
+            parent = 'None'
         return {'name': self.name,
                 'id': self.id, 
                 'type': self.type,
                 'description': self.description, 
                 'nodeInfo': json.dumps(self.nodeInfo),
                 'haveTried':self.haveTried, 
+                'dateTried':dateTried,
                 'rating':self.rating,
-                'review':self.review,
+                'review':self.review, 
+                'dateReviewed':dateReviewed,
                 'ownerName': self.owner.username,
                 'ownerId': self.owner.id,
-                'parentName': self.parent.name,
+                'parentName': parent,
                 'parentId': parentId}
     
     def buildPublicJson(self):

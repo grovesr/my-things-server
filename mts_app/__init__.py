@@ -40,10 +40,4 @@ def create_app(config_name = os.environ.get('FLASK_ENV') or 'development'):
     from mts_app.main import bp as main_bp
     app.register_blueprint(main_bp)
 
-    from mts_app.helpers import checkDatabasePrerequisites
-    if not app.config['TESTING']:
-        with app.app_context():
-            checkDatabasePrerequisites()
-
-
     return app

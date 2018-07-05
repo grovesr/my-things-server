@@ -21,6 +21,8 @@ from flask import make_response
 from werkzeug.exceptions import BadRequest, HTTPException
 from werkzeug.security import check_password_hash
 from sqlalchemy.exc import IntegrityError
+from dateutil.parser import parse
+
 
 auth = HTTPBasicAuth()  
 
@@ -59,8 +61,22 @@ def unauthorized():
 @auth.login_required
 def getMainNodes():
     validateUser()
-    rootNode = Node.query.filter_by(name='Root', parent=None).first()
-    nodes = Node.query.filter_by(parent=rootNode).all()
+    searchField = request.args.get('searchField', None)
+    searchValue = request.args.get('searchValue', None)
+    orderField = request.args.get('orderField', 'name')
+    orderDir = request.args.get('orderDir', 'desc')
+    if searchField and searchField not in Node.validSearchFields():
+        raise BadRequest('searchField is not valid. Valid fields = ' + str(Node.validSearchFields()))
+    filterBy = {}
+    if searchField and searchValue:
+        filterBy[searchField] = searchValue
+    if orderField and orderField not in Node.validOrderByFields():
+        raise BadRequest('orderField is not valid. Valid fields = ' + str(Node.validOrderByFields()))
+    if orderDir.lower() not in ['asc', 'desc']:
+        raise BadRequest('orderBy can only be "asc" or "desc"')
+    rootNode = Node.query.filter_by(parent=None).first()
+    filterBy['parentId'] = rootNode.id
+    nodes = Node.query.filter_by(**filterBy).order_by(orderField).all()
     if len(nodes) == 0:
         raise NotFound('No main nodes found')
     nodesJson = {'nodes':[]}
@@ -73,7 +89,20 @@ def getMainNodes():
 @auth.login_required
 def getNodes():
     validateUser()
-    nodes = Node.query.filter(Node.name!='Root',Node.parent!=None).all()
+    searchField = request.args.get('searchField', None)
+    searchValue = request.args.get('searchValue', None)
+    orderField = request.args.get('orderField', 'name')
+    orderDir = request.args.get('orderDir', 'desc')
+    if searchField and searchField not in Node.validSearchFields():
+        raise BadRequest('searchField is not valid. Valid fields = ' + str(Node.validSearchFields()))
+    filterBy = {}
+    if searchField and searchValue:
+        filterBy[searchField] = searchValue
+    if orderField and orderField not in Node.validOrderByFields():
+        raise BadRequest('orderField is not valid. Valid fields = ' + str(Node.validOrderByFields()))
+    if orderDir.lower() not in ['asc', 'desc']:
+        raise BadRequest('orderBy can only be "asc" or "desc"')
+    nodes = Node.query.filter(Node.parent != None).filter_by(**filterBy).order_by(orderField).all()
     if len(nodes) == 0:
         raise NotFound('No nodes found')
     nodesJson = {'nodes':[]}
@@ -128,6 +157,26 @@ def addNode():
         parent = Node.query.filter_by(name='Root', parent=None).first()
     try:
         node = Node(name=request.json['name'], owner=owner, parent=parent)
+        if 'name' in request.json:
+            node.name = request.json['name']
+        if 'type' in request.json:
+            node.type = request.json['type']
+        if 'description' in request.json:
+            node.description = request.json['description']
+        if 'nodeInfo' in request.json:
+            node.nodeInfo = request.json['nodeInfo']
+        if 'haveTried' in request.json:
+            node.haveTried = request.json['haveTried']
+        if 'dateTried' in request.json:
+            node.dateTried = parse(request.json['dateTried']).date()
+        if 'review' in request.json:
+            node.review = request.json['review']
+        if 'dateReviewed' in request.json:
+            node.dateReviewed = parse(request.json['dateReviewed']).date()
+        if 'rating' in request.json:
+            node.rating = request.json['rating']
+        if 'ownerId' in request.json:
+            raise BadRequest('You can''t specify a node''s owner by setting the ownerId attribute. set ''owner=username'' instead')
         db.session.add(node)
         db.session.flush()
     except IntegrityError as e:
@@ -155,8 +204,18 @@ def updateNode(nodeId):
             node.nodeInfo = request.json['nodeInfo']
         if 'haveTried' in request.json:
             node.haveTried = request.json['haveTried']
+        if 'dateTried' in request.json:
+            try:
+                node.dateTried = parse(request.json['dateTried'])
+            except ValueError:
+                raise BadRequest('Provided dateTried is not a valid date format')
         if 'review' in request.json:
             node.review = request.json['review']
+        if 'dateReviewed' in request.json:
+            try:
+                node.dateReviewed = parse(request.json['dateReviewed'])
+            except ValueError:
+                raise BadRequest('Provided dateReviewed is not a valid date format')
         if 'rating' in request.json:
             node.rating = request.json['rating']
         if 'ownerId' in request.json:
@@ -165,6 +224,8 @@ def updateNode(nodeId):
             raise BadRequest('You can''t change a node''s parent with an update/node request' )
         db.session.add(node)
         db.session.flush()
+    except AssertionError as e:
+        raise BadRequest('Problem with node attributes: ' + str(e))
     except IntegrityError as e:
         db.session.rollback()
         raise BadRequest('This node already exists: ' + str(e))
