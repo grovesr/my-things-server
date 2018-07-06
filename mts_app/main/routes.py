@@ -22,6 +22,7 @@ from werkzeug.exceptions import BadRequest, HTTPException
 from werkzeug.security import check_password_hash
 from sqlalchemy.exc import IntegrityError
 from dateutil.parser import parse
+from sqlalchemy.orm import aliased
 
 
 auth = HTTPBasicAuth()  
@@ -113,11 +114,39 @@ def getNodes():
 
 @main_bp.route('/get/node/<string:nodeId>', methods=['GET'])
 @auth.login_required
-def getNode(nodeId):
+def getNodeFromId(nodeId):
     validateUser()
     nodeQuery = Node.query.filter_by(id=nodeId)
     if nodeQuery.count() == 0:
         raise NotFound('Node not found')
+    node = nodeQuery.first()
+    return jsonify(node.buildPublicJson())
+
+@main_bp.route('/get/node', methods=['GET'])
+@auth.login_required
+def getNodeFromNameParentOwner():
+    validateUser()
+    nodeName = request.args.get('nodename', None)
+    ownerName = request.args.get('ownername', None)
+    parentName = request.args.get('parentname', None)
+    filterBy = {}
+    if nodeName is  None or ownerName is None:
+        raise BadRequest('URL arguments nodename and ownername must be specified in order to find get/node')
+    filterBy['name'] = nodeName
+    ownerQuery = User.query.filter_by(username=ownerName)
+    if ownerQuery.count() == 0:
+        raise NotFound('Invalid ownername specified in get/node request, so no node could be found')
+    filterBy['ownerId'] = ownerQuery.first().id
+    rootNode = Node.query.filter_by(parentId=None).first()
+    alias = aliased(Node)
+    if parentName is not None:
+        nodeQuery = Node.query.filter_by(name=nodeName).join(alias,Node.parent).filter(alias.name==parentName)
+    else:
+        nodeQuery = Node.query.filter_by(name=nodeName).join(alias,Node.parent).filter(alias.id==rootNode.id)
+    if nodeQuery.count() == 0:
+        raise NotFound('Node not found')
+    if nodeQuery.count() > 1:
+        raise NotFound('More than one node found. Try /get/nodes with the same URL args')
     node = nodeQuery.first()
     return jsonify(node.buildPublicJson())
 

@@ -40,12 +40,14 @@ sudo ufw status
 15a. sudo apt-get -y install libmysqlclient-dev (also needed to get msqlclient to pip install"
 16. make sure to cd /home/ubuntu (ubuntu is the sudo user)
 17. git clone https://github.com/grovesr/my-things-server
+17a. copy .gitconfig over on local machine "cp ~/.gitconfig /path/to/deployment/vagrant/" on vagrant machine "sudo mv /vagrant/.gitconfig ~/"
 18. cd my-things-server
 19. python3 -m venv venv
 20. . venv/bin/activate
 21. pip install -r requirements.txt
 22. pip install gunicorn pymysql
 23. echo "export FLASK_APP=my_things_server.py" >> ~/.profile
+23a. echo "export FLASK_ENV=production" >> ~/.profile
 24. . ~/.profile
 25. . venv/bin/activate
 26. mysql -u root -p
@@ -65,5 +67,7 @@ quit;
 32. sudo supervisorctl reload
 33. sudo cp deployment/nginx/sites-enabled/my-things-server /etc/nginx/sites-enabled/
 34. sudo seervice nginx reload
+
+
 
 

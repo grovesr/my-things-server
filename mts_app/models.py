@@ -156,7 +156,7 @@ class Node(db.Model):
     
     def buildPublicJson(self):
         publicJson = self.buildJson()
-        publicJson['uri'] = url_for('main.getNode', nodeId=self.id, _external=True)
+        publicJson['uri'] = url_for('main.getNodeFromId', nodeId=self.id, _external=True)
         return publicJson
 
 class User(db.Model):
