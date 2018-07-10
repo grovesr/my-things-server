@@ -1072,6 +1072,288 @@ class NodeApiTests(MyThingsTest):
             self.assertEqual(url_for('main.getNodeFromId',nodeId=mainNodeJson2['id'],
                                      _external=True), mainNodeJson2['uri'])
         
+    def test_get_main_nodes_filter_owner(self):
+        authHeaders = {
+            'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
+        }
+        data={'name':'MainNode1', 'owner':self.editUser.username}
+        response = self.client.post('/add/node',
+                                 data=json.dumps(data),
+                                 content_type='application/json',
+                                 headers=authHeaders)
+        self.assertEqual(response.status_code, 201)
+        data={'name':'MainNode2', 'owner':self.adminUser.username}
+        response = self.client.post('/add/node',
+                                 data=json.dumps(data),
+                                 content_type='application/json',
+                                 headers=authHeaders)
+        self.assertEqual(response.status_code, 201) 
+        response = self.client.get('/get/main/nodes?ownerId=' + str(self.editUser.id), headers=authHeaders)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('nodeCount', response.json)
+        self.assertEqual(1, response.json['nodeCount'])
+        self.assertIn('nodes', response.json)
+        nodeResponse = response.json['nodes'][0]
+        self.assertIn('name', nodeResponse)
+        self.assertEqual('MainNode1', nodeResponse['name'])
+        self.assertIn('ownerName', nodeResponse)
+        self.assertEqual(self.editUser.username, nodeResponse['ownerName'])
+        self.assertIn('ownerId', nodeResponse)
+        self.assertEqual(self.editUser.id, nodeResponse['ownerId'])
+        self.assertIn('parentName',nodeResponse)
+        self.assertEqual(self.rootNode.name, nodeResponse['parentName'])
+        self.assertIn('parentId', nodeResponse)
+        self.assertEqual(self.rootNode.id, nodeResponse['parentId'])
+        self.assertIn('uri',nodeResponse)
+        self.assertIn('uri',nodeResponse)
+        with current_app.app_context():
+            self.assertEqual(url_for('main.getNodeFromId',nodeId=nodeResponse['id'], 
+                                     _external=True), nodeResponse['uri'])
+            
+    def test_get_main_nodes_filter_bad_owner(self):
+        authHeaders = {
+            'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
+        }
+        data={'name':'MainNode1', 'owner':self.editUser.username}
+        response = self.client.post('/add/node',
+                                 data=json.dumps(data),
+                                 content_type='application/json',
+                                 headers=authHeaders)
+        self.assertEqual(response.status_code, 201)
+        data={'name':'MainNode2', 'owner':self.adminUser.username}
+        response = self.client.post('/add/node',
+                                 data=json.dumps(data),
+                                 content_type='application/json',
+                                 headers=authHeaders)
+        self.assertEqual(response.status_code, 201) 
+        response = self.client.get('/get/main/nodes?ownerId=999', headers=authHeaders)
+        self.assertEqual(response.status_code, 404)
+        self.assertIn('error', response.json)
+        self.assertEqual('Invalid ownername specified in get/Main/nodes request, so no nodes could be found', response.json['error'])
+            
+    def test_get_main_nodes_filter_wrong_owner(self):
+        authHeaders = {
+            'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
+        }
+        data={'name':'MainNode1', 'owner':self.editUser.username}
+        response = self.client.post('/add/node',
+                                 data=json.dumps(data),
+                                 content_type='application/json',
+                                 headers=authHeaders)
+        self.assertEqual(response.status_code, 201)
+        data={'name':'MainNode2', 'owner':self.editUser.username}
+        response = self.client.post('/add/node',
+                                 data=json.dumps(data),
+                                 content_type='application/json',
+                                 headers=authHeaders)
+        self.assertEqual(response.status_code, 201) 
+        response = self.client.get('/get/main/nodes?ownerId=' + str(self.adminUser.id), headers=authHeaders)
+        self.assertEqual(response.status_code, 404)
+        self.assertIn('error', response.json)
+        self.assertEqual('No main nodes found', response.json['error'])
+            
+    def test_get_main_nodes_filter_type(self):
+        authHeaders = {
+            'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
+        }
+        data={'name':'MainNode1', 'owner':self.editUser.username, 'type':'books'}
+        response = self.client.post('/add/node',
+                                 data=json.dumps(data),
+                                 content_type='application/json',
+                                 headers=authHeaders)
+        self.assertEqual(response.status_code, 201)
+        data={'name':'MainNode2', 'owner':self.editUser.username, 'type':'beer'}
+        response = self.client.post('/add/node',
+                                 data=json.dumps(data),
+                                 content_type='application/json',
+                                 headers=authHeaders)
+        self.assertEqual(response.status_code, 201) 
+        response = self.client.get('/get/main/nodes?type=beer', headers=authHeaders)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('nodeCount', response.json)
+        self.assertEqual(1, response.json['nodeCount'])
+        self.assertIn('nodes', response.json)
+        nodeResponse = response.json['nodes'][0]
+        self.assertIn('name', nodeResponse)
+        self.assertEqual('MainNode2', nodeResponse['name'])
+        self.assertIn('type', nodeResponse)
+        self.assertEqual('beer', nodeResponse['type'])
+        self.assertIn('ownerName', nodeResponse)
+        self.assertEqual(self.editUser.username, nodeResponse['ownerName'])
+        self.assertIn('ownerId', nodeResponse)
+        self.assertEqual(self.editUser.id, nodeResponse['ownerId'])
+        self.assertIn('parentName',nodeResponse)
+        self.assertEqual(self.rootNode.name, nodeResponse['parentName'])
+        self.assertIn('parentId', nodeResponse)
+        self.assertEqual(self.rootNode.id, nodeResponse['parentId'])
+        self.assertIn('uri',nodeResponse)
+        self.assertIn('uri',nodeResponse)
+        with current_app.app_context():
+            self.assertEqual(url_for('main.getNodeFromId',nodeId=nodeResponse['id'], 
+                                     _external=True), nodeResponse['uri'])
+            
+    def test_get_main_nodes_filter_wrong_type(self):
+        authHeaders = {
+            'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
+        }
+        data={'name':'MainNode1', 'owner':self.editUser.username, 'type':'books'}
+        response = self.client.post('/add/node',
+                                 data=json.dumps(data),
+                                 content_type='application/json',
+                                 headers=authHeaders)
+        self.assertEqual(response.status_code, 201)
+        data={'name':'MainNode2', 'owner':self.editUser.username, 'type':'beer'}
+        response = self.client.post('/add/node',
+                                 data=json.dumps(data),
+                                 content_type='application/json',
+                                 headers=authHeaders)
+        self.assertEqual(response.status_code, 201) 
+        response = self.client.get('/get/main/nodes?type=foo', headers=authHeaders)
+        self.assertEqual(response.status_code, 404)
+        self.assertIn('error', response.json)
+        self.assertEqual('No main nodes found', response.json['error'])
+        
+    def test_get_nodes_filter_owner(self):
+        authHeaders = {
+            'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
+        }
+        data={'name':'MainNode1', 'owner':self.editUser.username}
+        response = self.client.post('/add/node',
+                                 data=json.dumps(data),
+                                 content_type='application/json',
+                                 headers=authHeaders)
+        self.assertEqual(response.status_code, 201)
+        data={'name':'MainNode2', 'owner':self.adminUser.username}
+        response = self.client.post('/add/node',
+                                 data=json.dumps(data),
+                                 content_type='application/json',
+                                 headers=authHeaders)
+        self.assertEqual(response.status_code, 201) 
+        response = self.client.get('/get/nodes?ownerId=' + str(self.editUser.id), headers=authHeaders)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('nodeCount', response.json)
+        self.assertEqual(1, response.json['nodeCount'])
+        self.assertIn('nodes', response.json)
+        nodeResponse = response.json['nodes'][0]
+        self.assertIn('name', nodeResponse)
+        self.assertEqual('MainNode1', nodeResponse['name'])
+        self.assertIn('ownerName', nodeResponse)
+        self.assertEqual(self.editUser.username, nodeResponse['ownerName'])
+        self.assertIn('ownerId', nodeResponse)
+        self.assertEqual(self.editUser.id, nodeResponse['ownerId'])
+        self.assertIn('parentName',nodeResponse)
+        self.assertEqual(self.rootNode.name, nodeResponse['parentName'])
+        self.assertIn('parentId', nodeResponse)
+        self.assertEqual(self.rootNode.id, nodeResponse['parentId'])
+        self.assertIn('uri',nodeResponse)
+        self.assertIn('uri',nodeResponse)
+        with current_app.app_context():
+            self.assertEqual(url_for('main.getNodeFromId',nodeId=nodeResponse['id'], 
+                                     _external=True), nodeResponse['uri'])
+            
+    def test_get_nodes_filter_bad_owner(self):
+        authHeaders = {
+            'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
+        }
+        data={'name':'MainNode1', 'owner':self.editUser.username}
+        response = self.client.post('/add/node',
+                                 data=json.dumps(data),
+                                 content_type='application/json',
+                                 headers=authHeaders)
+        self.assertEqual(response.status_code, 201)
+        data={'name':'MainNode2', 'owner':self.adminUser.username}
+        response = self.client.post('/add/node',
+                                 data=json.dumps(data),
+                                 content_type='application/json',
+                                 headers=authHeaders)
+        self.assertEqual(response.status_code, 201) 
+        response = self.client.get('/get/nodes?ownerId=999', headers=authHeaders)
+        self.assertEqual(response.status_code, 404)
+        self.assertIn('error', response.json)
+        self.assertEqual('Invalid ownername specified in get/nodes request, so no nodes could be found', response.json['error'])
+            
+    def test_get_nodes_filter_wrong_owner(self):
+        authHeaders = {
+            'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
+        }
+        data={'name':'MainNode1', 'owner':self.editUser.username}
+        response = self.client.post('/add/node',
+                                 data=json.dumps(data),
+                                 content_type='application/json',
+                                 headers=authHeaders)
+        self.assertEqual(response.status_code, 201)
+        data={'name':'MainNode2', 'owner':self.editUser.username}
+        response = self.client.post('/add/node',
+                                 data=json.dumps(data),
+                                 content_type='application/json',
+                                 headers=authHeaders)
+        self.assertEqual(response.status_code, 201) 
+        response = self.client.get('/get/nodes?ownerId=' + str(self.adminUser.id), headers=authHeaders)
+        self.assertEqual(response.status_code, 404)
+        self.assertIn('error', response.json)
+        self.assertEqual('No nodes found', response.json['error'])
+            
+    def test_get_nodes_filter_type(self):
+        authHeaders = {
+            'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
+        }
+        data={'name':'MainNode1', 'owner':self.editUser.username, 'type':'books'}
+        response = self.client.post('/add/node',
+                                 data=json.dumps(data),
+                                 content_type='application/json',
+                                 headers=authHeaders)
+        self.assertEqual(response.status_code, 201)
+        data={'name':'MainNode2', 'owner':self.editUser.username, 'type':'beer'}
+        response = self.client.post('/add/node',
+                                 data=json.dumps(data),
+                                 content_type='application/json',
+                                 headers=authHeaders)
+        self.assertEqual(response.status_code, 201) 
+        response = self.client.get('/get/nodes?type=beer', headers=authHeaders)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('nodeCount', response.json)
+        self.assertEqual(1, response.json['nodeCount'])
+        self.assertIn('nodes', response.json)
+        nodeResponse = response.json['nodes'][0]
+        self.assertIn('name', nodeResponse)
+        self.assertEqual('MainNode2', nodeResponse['name'])
+        self.assertIn('type', nodeResponse)
+        self.assertEqual('beer', nodeResponse['type'])
+        self.assertIn('ownerName', nodeResponse)
+        self.assertEqual(self.editUser.username, nodeResponse['ownerName'])
+        self.assertIn('ownerId', nodeResponse)
+        self.assertEqual(self.editUser.id, nodeResponse['ownerId'])
+        self.assertIn('parentName',nodeResponse)
+        self.assertEqual(self.rootNode.name, nodeResponse['parentName'])
+        self.assertIn('parentId', nodeResponse)
+        self.assertEqual(self.rootNode.id, nodeResponse['parentId'])
+        self.assertIn('uri',nodeResponse)
+        self.assertIn('uri',nodeResponse)
+        with current_app.app_context():
+            self.assertEqual(url_for('main.getNodeFromId',nodeId=nodeResponse['id'], 
+                                     _external=True), nodeResponse['uri'])
+            
+    def test_get_nodes_filter_wrong_type(self):
+        authHeaders = {
+            'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
+        }
+        data={'name':'MainNode1', 'owner':self.editUser.username, 'type':'books'}
+        response = self.client.post('/add/node',
+                                 data=json.dumps(data),
+                                 content_type='application/json',
+                                 headers=authHeaders)
+        self.assertEqual(response.status_code, 201)
+        data={'name':'MainNode2', 'owner':self.editUser.username, 'type':'beer'}
+        response = self.client.post('/add/node',
+                                 data=json.dumps(data),
+                                 content_type='application/json',
+                                 headers=authHeaders)
+        self.assertEqual(response.status_code, 201) 
+        response = self.client.get('/get/nodes?type=foo', headers=authHeaders)
+        self.assertEqual(response.status_code, 404)
+        self.assertIn('error', response.json)
+        self.assertEqual('No nodes found', response.json['error'])
+
     def test_create_two_equal_main_nodes_edit_access(self):
         authHeaders = {
             'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")

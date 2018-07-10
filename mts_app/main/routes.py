@@ -64,6 +64,8 @@ def getMainNodes():
     validateUser()
     searchField = request.args.get('searchField', None)
     searchValue = request.args.get('searchValue', None)
+    ownerId = request.args.get('ownerId', None)
+    type = request.args.get('type', None)
     orderField = request.args.get('orderField', 'name')
     orderDir = request.args.get('orderDir', 'desc')
     if searchField and searchField not in Node.validSearchFields():
@@ -75,6 +77,13 @@ def getMainNodes():
         raise BadRequest('orderField is not valid. Valid fields = ' + str(Node.validOrderByFields()))
     if orderDir.lower() not in ['asc', 'desc']:
         raise BadRequest('orderBy can only be "asc" or "desc"')
+    if ownerId:
+        filterBy['ownerId'] = ownerId
+        ownerQuery = User.query.filter_by(id=ownerId)
+        if ownerQuery.count() == 0:
+            raise NotFound('Invalid ownername specified in get/Main/nodes request, so no nodes could be found')
+    if type:
+        filterBy['type'] = type
     rootNode = Node.query.filter_by(parent=None).first()
     filterBy['parentId'] = rootNode.id
     nodes = Node.query.filter_by(**filterBy).order_by(orderField).all()
@@ -92,6 +101,8 @@ def getNodes():
     validateUser()
     searchField = request.args.get('searchField', None)
     searchValue = request.args.get('searchValue', None)
+    ownerId = request.args.get('ownerId', None)
+    type = request.args.get('type', None)
     orderField = request.args.get('orderField', 'name')
     orderDir = request.args.get('orderDir', 'desc')
     if searchField and searchField not in Node.validSearchFields():
@@ -103,6 +114,13 @@ def getNodes():
         raise BadRequest('orderField is not valid. Valid fields = ' + str(Node.validOrderByFields()))
     if orderDir.lower() not in ['asc', 'desc']:
         raise BadRequest('orderBy can only be "asc" or "desc"')
+    if ownerId:
+        filterBy['ownerId'] = ownerId
+        ownerQuery = User.query.filter_by(id=ownerId)
+        if ownerQuery.count() == 0:
+            raise NotFound('Invalid ownername specified in get/nodes request, so no nodes could be found')
+    if type:
+        filterBy['type'] = type
     nodes = Node.query.filter(Node.parent != None).filter_by(**filterBy).order_by(orderField).all()
     if len(nodes) == 0:
         raise NotFound('No nodes found')
