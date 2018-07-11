@@ -92,6 +92,7 @@ def getMainNodes():
     nodesJson = {'nodes':[]}
     nodesJson['nodeCount'] = len(nodes)
     for node in nodes:
+        node.childCount = len(node.children);
         nodesJson['nodes'].append(node.buildPublicJson())
     return jsonify(nodesJson)
 
@@ -127,6 +128,7 @@ def getNodes():
     nodesJson = {'nodes':[]}
     nodesJson['nodeCount'] = len(nodes)
     for node in nodes:
+        node.childCount = len(node.children);
         nodesJson['nodes'].append(node.buildPublicJson())
     return jsonify(nodesJson)
 
@@ -138,6 +140,7 @@ def getNodeFromId(nodeId):
     if nodeQuery.count() == 0:
         raise NotFound('Node not found')
     node = nodeQuery.first()
+    node.childCount = len(node.children);
     return jsonify(node.buildPublicJson())
 
 @main_bp.route('/get/node', methods=['GET'])
@@ -166,6 +169,7 @@ def getNodeFromNameParentOwner():
     if nodeQuery.count() > 1:
         raise NotFound('More than one node found. Try /get/nodes with the same URL args')
     node = nodeQuery.first()
+    node.childCount = len(node.children);
     return jsonify(node.buildPublicJson())
 
 @main_bp.route('/delete/node/<string:nodeId>', methods=['DELETE'])
@@ -278,4 +282,5 @@ def updateNode(nodeId):
         raise BadRequest('This node already exists: ' + str(e))
     else:
         db.session.commit()
+    node.childCount = len(node.children);
     return jsonify(node.buildPublicJson())

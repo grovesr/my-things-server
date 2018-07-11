@@ -139,6 +139,8 @@ class Node(db.Model):
             parent = self.parent.name
         else:
             parent = 'None'
+        if not self.childCount:
+            self.childCount = 0;
         return {'name': self.name,
                 'id': self.id, 
                 'type': self.type,
@@ -152,7 +154,8 @@ class Node(db.Model):
                 'ownerName': self.owner.username,
                 'ownerId': self.owner.id,
                 'parentName': parent,
-                'parentId': parentId}
+                'parentId': parentId,
+                'childCount': self.childCount}
     
     def buildPublicJson(self):
         publicJson = self.buildJson()

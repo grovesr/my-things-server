@@ -1493,6 +1493,27 @@ class NodeApiTests(MyThingsTest):
         self.assertIn('nodeCount', response.json)
         self.assertEqual(response.json['nodeCount'], 28)
         
+    def test_get_nodes_three_level_child_count(self):
+        users = [create_user_with_index('Test', 1),
+                 create_user_with_index('Test', 2)]
+        for user in users:
+            mainNodes = create_two_main_nodes_for_owner(user, parent=self.rootNode)
+            for mainNode in mainNodes:
+                subNodes = create_two_sub_nodes_for_parent_node(mainNode)
+                for subNode in subNodes:
+                    create_two_sub_nodes_for_parent_node(subNode)
+        # we now have a three level hierarchy for two different users we can test against
+        response = self.client.get('/get/main/nodes?ownerId=' + str(users[0].id), headers=authHeaders, 
+                                   content_type='application/json')
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('nodeCount', response.json)
+        self.assertEqual(response.json['nodeCount'], 2)
+        self.assertIn('nodes', response.json)
+        self.assertEqual(2, len(response.json['nodes']))
+        self.assertIn('childCount', response.json['nodes'][0])
+        self.assertEqual(2, response.json['nodes'][0]['childCount'])
+        
+        
     def test_create_two_main_nodes_each_with_two_subnodes_each_with_two_subsubnodes_for_two_users_edit_access(self):
         users = [create_user_with_index('Test', 1),
                  create_user_with_index('Test', 2)]
