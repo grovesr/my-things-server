@@ -235,6 +235,7 @@ def addNode():
         raise BadRequest('This node already exists: ' + str(e))
     else:
         db.session.commit()
+    node.childCount = 0
     return jsonify(node.buildPublicJson()), 201
 
 @main_bp.route('/update/node/<string:nodeId>', methods=['PUT'])

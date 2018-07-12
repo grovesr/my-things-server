@@ -15,7 +15,7 @@ from mts_app import models
 from mts_app.helpers import checkDatabasePrerequisites
 from sqlalchemy.exc import OperationalError
 
-app=create_app(os.getenv('FLASK_CONFIG') or 'default')
+app=create_app(os.getenv('FLASK_ENV') or 'default')
 if not app.config['TESTING']:
     try:
         with app.app_context():
