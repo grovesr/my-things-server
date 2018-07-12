@@ -37,6 +37,7 @@ class Node(db.Model):
     children =      db.relationship('Node', backref=backref('parent', remote_side=[id]),
                                     single_parent=True, lazy=True, cascade="all, delete, delete-orphan")
     __table_args__ = (UniqueConstraint('name', 'ownerId', 'parentId'),)
+    childCount = 0
     
     def __init__(self, **kwargs):
         super(Node, self).__init__(**kwargs)
@@ -139,8 +140,6 @@ class Node(db.Model):
             parent = self.parent.name
         else:
             parent = 'None'
-        if not self.childCount:
-            self.childCount = 0;
         return {'name': self.name,
                 'id': self.id, 
                 'type': self.type,
