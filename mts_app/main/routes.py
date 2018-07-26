@@ -64,9 +64,7 @@ def getMainNodes():
     validateUser()
     filterBy = {}
     for key,value in iter(request.args.to_dict().items()):
-        if key not in Node.validSearchFields():
-            raise BadRequest('searchField is not valid. Valid fields = ' + str(Node.validSearchFields()))
-        if key != 'orderField' and key != 'orderDir':
+        if key in Node.validSearchFields() and key != 'orderField' and key != 'orderDir':
             filterBy[key] = value
     orderField = request.args.get('orderField', 'name')
     orderDir = request.args.get('orderDir', 'desc')
@@ -96,9 +94,7 @@ def getNodes():
     validateUser()
     filterBy = {}
     for key,value in iter(request.args.to_dict().items()):
-        if key not in Node.validSearchFields():
-            raise BadRequest('searchField is not valid. Valid fields = ' + str(Node.validSearchFields()))
-        if key != 'orderField' and key != 'orderDir':
+        if key in Node.validSearchFields() and key != 'orderField' and key != 'orderDir':
             filterBy[key] = value
     orderField = request.args.get('orderField', 'name')
     orderDir = request.args.get('orderDir', 'desc')
