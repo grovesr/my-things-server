@@ -159,9 +159,6 @@ class Node(db.Model):
     def buildPublicJson(self):
         publicJson = self.buildJson()
         publicJson['uri'] = url_for('main.getNodeFromId', nodeId=self.id, _external=True)
-        rootNode = Node.query.filter_by(parent=None).first()
-        if self.parentId == rootNode.id:
-            publicJson['parentId'] = None
         return publicJson
 
 class User(db.Model):

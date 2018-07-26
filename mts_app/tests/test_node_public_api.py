@@ -832,7 +832,7 @@ class NodeApiTests(MyThingsTest):
         response = self.client.get('/get/main/nodes', headers=authHeaders)
         self.assertEqual(response.status_code, 200)
         self.assertIn('nodeCount', response.json)
-        self.assertEqual(2, response.json['nodeCount'])
+        self.assertEqual(3, response.json['nodeCount'])
         self.assertIn('nodes', response.json)
         mainNodeJson1 = [nodeJson for nodeJson in response.json['nodes'] if nodeJson['name'] == 'MainNode1'][0]
         mainNodeJson2 = [nodeJson for nodeJson in response.json['nodes'] if nodeJson['name'] == 'MainNode2'][0]
@@ -845,7 +845,7 @@ class NodeApiTests(MyThingsTest):
         self.assertIn('parentName', mainNodeJson1)
         self.assertEqual(self.rootNode.name, mainNodeJson1['parentName'])
         self.assertIn('parentId', mainNodeJson1)
-        self.assertEqual(None, mainNodeJson1['parentId'])
+        self.assertEqual(self.rootNode.id, mainNodeJson1['parentId'])
         self.assertIn('uri',mainNodeJson1)
         self.assertIn('uri',mainNodeJson1)
         with current_app.app_context():
@@ -860,7 +860,7 @@ class NodeApiTests(MyThingsTest):
         self.assertIn('parentName', mainNodeJson2)
         self.assertEqual(self.rootNode.name, mainNodeJson2['parentName'])
         self.assertIn('parentId', mainNodeJson2)
-        self.assertEqual(None, mainNodeJson2['parentId'])
+        self.assertEqual(self.rootNode.id, mainNodeJson2['parentId'])
         self.assertIn('uri',mainNodeJson2)
         self.assertIn('uri',mainNodeJson2)
         with current_app.app_context():
@@ -889,7 +889,7 @@ class NodeApiTests(MyThingsTest):
         response = self.client.get('/get/main/nodes', headers=authHeaders)
         self.assertEqual(response.status_code, 200)
         self.assertIn('nodeCount', response.json)
-        self.assertEqual(2, response.json['nodeCount'])
+        self.assertEqual(3, response.json['nodeCount'])
         self.assertIn('nodes', response.json)
         mainNodeJson1 = [nodeJson for nodeJson in response.json['nodes'] if nodeJson['name'] == 'MainNode1'][0]
         mainNodeJson2 = [nodeJson for nodeJson in response.json['nodes'] if nodeJson['name'] == 'MainNode2'][0]
@@ -902,7 +902,7 @@ class NodeApiTests(MyThingsTest):
         self.assertIn('parentName', mainNodeJson1)
         self.assertEqual(self.rootNode.name, mainNodeJson1['parentName'])
         self.assertIn('parentId', mainNodeJson1)
-        self.assertEqual(None, mainNodeJson1['parentId'])
+        self.assertEqual(self.rootNode.id, mainNodeJson1['parentId'])
         self.assertIn('uri',mainNodeJson1)
         self.assertIn('uri',mainNodeJson1)
         with current_app.app_context():
@@ -917,7 +917,7 @@ class NodeApiTests(MyThingsTest):
         self.assertIn('parentName', mainNodeJson2)
         self.assertEqual(self.rootNode.name, mainNodeJson2['parentName'])
         self.assertIn('parentId', mainNodeJson2)
-        self.assertEqual(None, mainNodeJson2['parentId'])
+        self.assertEqual(self.rootNode.id, mainNodeJson2['parentId'])
         self.assertIn('uri',mainNodeJson2)
         self.assertIn('uri',mainNodeJson2)
         with current_app.app_context():
@@ -943,7 +943,7 @@ class NodeApiTests(MyThingsTest):
         response = self.client.get('/get/main/nodes?ownerId=' + str(self.editUser.id), headers=authHeaders)
         self.assertEqual(response.status_code, 200)
         self.assertIn('nodeCount', response.json)
-        self.assertEqual(1, response.json['nodeCount'])
+        self.assertEqual(2, response.json['nodeCount'])
         self.assertIn('nodes', response.json)
         nodeResponse = response.json['nodes'][0]
         self.assertIn('name', nodeResponse)
@@ -955,7 +955,7 @@ class NodeApiTests(MyThingsTest):
         self.assertIn('parentName',nodeResponse)
         self.assertEqual(self.rootNode.name, nodeResponse['parentName'])
         self.assertIn('parentId', nodeResponse)
-        self.assertEqual(None, nodeResponse['parentId'])
+        self.assertEqual(self.rootNode.id, nodeResponse['parentId'])
         self.assertIn('uri',nodeResponse)
         self.assertIn('uri',nodeResponse)
         with current_app.app_context():
@@ -1023,7 +1023,7 @@ class NodeApiTests(MyThingsTest):
         response = self.client.get('/get/main/nodes?type=beer', headers=authHeaders)
         self.assertEqual(response.status_code, 200)
         self.assertIn('nodeCount', response.json)
-        self.assertEqual(1, response.json['nodeCount'])
+        self.assertEqual(2, response.json['nodeCount'])
         self.assertIn('nodes', response.json)
         nodeResponse = response.json['nodes'][0]
         self.assertIn('name', nodeResponse)
@@ -1037,7 +1037,7 @@ class NodeApiTests(MyThingsTest):
         self.assertIn('parentName',nodeResponse)
         self.assertEqual(self.rootNode.name, nodeResponse['parentName'])
         self.assertIn('parentId', nodeResponse)
-        self.assertEqual(None, nodeResponse['parentId'])
+        self.assertEqual(self.rootNode.id, nodeResponse['parentId'])
         self.assertIn('uri',nodeResponse)
         self.assertIn('uri',nodeResponse)
         with current_app.app_context():
@@ -1084,7 +1084,7 @@ class NodeApiTests(MyThingsTest):
         response = self.client.get('/get/nodes?ownerId=' + str(self.editUser.id), headers=authHeaders)
         self.assertEqual(response.status_code, 200)
         self.assertIn('nodeCount', response.json)
-        self.assertEqual(1, response.json['nodeCount'])
+        self.assertEqual(2, response.json['nodeCount'])
         self.assertIn('nodes', response.json)
         nodeResponse = response.json['nodes'][0]
         self.assertIn('name', nodeResponse)
@@ -1096,7 +1096,7 @@ class NodeApiTests(MyThingsTest):
         self.assertIn('parentName',nodeResponse)
         self.assertEqual(self.rootNode.name, nodeResponse['parentName'])
         self.assertIn('parentId', nodeResponse)
-        self.assertEqual(None, nodeResponse['parentId'])
+        self.assertEqual(self.rootNode.id, nodeResponse['parentId'])
         self.assertIn('uri',nodeResponse)
         self.assertIn('uri',nodeResponse)
         with current_app.app_context():
@@ -1164,7 +1164,7 @@ class NodeApiTests(MyThingsTest):
         response = self.client.get('/get/nodes?type=beer', headers=authHeaders)
         self.assertEqual(response.status_code, 200)
         self.assertIn('nodeCount', response.json)
-        self.assertEqual(1, response.json['nodeCount'])
+        self.assertEqual(2, response.json['nodeCount'])
         self.assertIn('nodes', response.json)
         nodeResponse = response.json['nodes'][0]
         self.assertIn('name', nodeResponse)
@@ -1178,7 +1178,7 @@ class NodeApiTests(MyThingsTest):
         self.assertIn('parentName',nodeResponse)
         self.assertEqual(self.rootNode.name, nodeResponse['parentName'])
         self.assertIn('parentId', nodeResponse)
-        self.assertEqual(None, nodeResponse['parentId'])
+        self.assertEqual(self.rootNode.id, nodeResponse['parentId'])
         self.assertIn('uri',nodeResponse)
         self.assertIn('uri',nodeResponse)
         with current_app.app_context():
@@ -1322,12 +1322,12 @@ class NodeApiTests(MyThingsTest):
                                    content_type='application/json')
         self.assertEqual(response.status_code, 200)
         self.assertIn('nodeCount', response.json)
-        self.assertEqual(response.json['nodeCount'], 14)
+        self.assertEqual(response.json['nodeCount'], 15)
         response = self.client.get('/get/main/nodes', headers=authHeaders, 
                                    content_type='application/json')
         self.assertEqual(response.status_code, 200)
         self.assertIn('nodeCount', response.json)
-        self.assertEqual(response.json['nodeCount'], 2)
+        self.assertEqual(response.json['nodeCount'], 3)
         
     def test_get_nodes_three_level_single_user_edit_access(self):
         users = [create_user_with_index('Test', 1),
@@ -1343,7 +1343,7 @@ class NodeApiTests(MyThingsTest):
                                    content_type='application/json')
         self.assertEqual(response.status_code, 200)
         self.assertIn('nodeCount', response.json)
-        self.assertEqual(response.json['nodeCount'], 28)
+        self.assertEqual(response.json['nodeCount'], 29)
         
     def test_get_nodes_three_level_child_count(self):
         users = [create_user_with_index('Test', 1),
@@ -1359,9 +1359,9 @@ class NodeApiTests(MyThingsTest):
                                    content_type='application/json')
         self.assertEqual(response.status_code, 200)
         self.assertIn('nodeCount', response.json)
-        self.assertEqual(response.json['nodeCount'], 2)
+        self.assertEqual(response.json['nodeCount'], 3)
         self.assertIn('nodes', response.json)
-        self.assertEqual(2, len(response.json['nodes']))
+        self.assertEqual(3, len(response.json['nodes']))
         self.assertIn('childCount', response.json['nodes'][0])
         self.assertEqual(2, response.json['nodes'][0]['childCount'])
         
@@ -1380,12 +1380,12 @@ class NodeApiTests(MyThingsTest):
                                    content_type='application/json')
         self.assertEqual(response.status_code, 200)
         self.assertIn('nodeCount', response.json)
-        self.assertEqual(response.json['nodeCount'], 28)
+        self.assertEqual(response.json['nodeCount'], 29)
         response = self.client.get('/get/main/nodes', headers=authHeaders, 
                                    content_type='application/json')
         self.assertEqual(response.status_code, 200)
         self.assertIn('nodeCount', response.json)
-        self.assertEqual(response.json['nodeCount'], 4)
+        self.assertEqual(response.json['nodeCount'], 5)
         
     def test_create_two_main_nodes_each_with_two_subnodes_each_with_two_subsubnodes_for_two_users_delete_one_main_node_edit_access(self):
         users = [create_user_with_index('Test', 1),
@@ -1401,7 +1401,7 @@ class NodeApiTests(MyThingsTest):
                                    content_type='application/json')
         self.assertEqual(response.status_code, 200)
         self.assertIn('nodeCount', response.json)
-        self.assertEqual(response.json['nodeCount'], 28)
+        self.assertEqual(response.json['nodeCount'], 29)
         mainNode = Node.query.filter(Node.owner==users[0], Node.parent==self.rootNode).first()
         response = self.client.delete('/delete/node/' + str(mainNode.id), headers=authHeaders, 
                                    content_type='application/json')
@@ -1410,7 +1410,7 @@ class NodeApiTests(MyThingsTest):
                                    content_type='application/json')
         self.assertEqual(response.status_code, 200)
         self.assertIn('nodeCount', response.json)
-        self.assertEqual(response.json['nodeCount'], 21)
+        self.assertEqual(response.json['nodeCount'], 22)
         
     def test_create_two_main_nodes_each_with_two_subnodes_each_with_two_subsubnodes_for_two_users_delete_one_sub_node_edit_access(self):
         users = [create_user_with_index('Test', 1),
@@ -1426,7 +1426,7 @@ class NodeApiTests(MyThingsTest):
                                    content_type='application/json')
         self.assertEqual(response.status_code, 200)
         self.assertIn('nodeCount', response.json)
-        self.assertEqual(response.json['nodeCount'], 28)
+        self.assertEqual(response.json['nodeCount'], 29)
         mainNode = Node.query.filter(Node.owner==users[0], Node.parent==self.rootNode).first()
         subNode = mainNode.children[0]
         response = self.client.delete('/delete/node/' + str(subNode.id), headers=authHeaders, 
@@ -1436,7 +1436,7 @@ class NodeApiTests(MyThingsTest):
                                    content_type='application/json')
         self.assertEqual(response.status_code, 200)
         self.assertIn('nodeCount', response.json)
-        self.assertEqual(response.json['nodeCount'], 25)
+        self.assertEqual(response.json['nodeCount'], 26)
         
     def test_create_two_main_nodes_each_with_two_subnodes_each_with_two_subsubnodes_for_two_users_delete_one_user_edit_access(self):
         authHeaders = {
@@ -1455,7 +1455,7 @@ class NodeApiTests(MyThingsTest):
                                    content_type='application/json')
         self.assertEqual(response.status_code, 200)
         self.assertIn('nodeCount', response.json)
-        self.assertEqual(response.json['nodeCount'], 28)
+        self.assertEqual(response.json['nodeCount'], 29)
         authHeaders = {
             'Authorization': 'Basic %s' % b64encode(b"Admin:test").decode("ascii")
         }
@@ -1466,7 +1466,7 @@ class NodeApiTests(MyThingsTest):
                                    content_type='application/json')
         self.assertEqual(response.status_code, 200)
         self.assertIn('nodeCount', response.json)
-        self.assertEqual(response.json['nodeCount'], 14)
+        self.assertEqual(response.json['nodeCount'], 15)
         
     def test_create_two_main_nodes_each_with_two_subnodes_each_with_two_subsubnodes_for_two_users_get_main_nodes_filter_user1(self):
         users = [create_user_with_index('Test', 1),
@@ -1482,13 +1482,13 @@ class NodeApiTests(MyThingsTest):
                                    content_type='application/json')
         self.assertEqual(response.status_code, 200)
         self.assertIn('nodeCount', response.json)
-        self.assertEqual(response.json['nodeCount'], 28)
+        self.assertEqual(response.json['nodeCount'], 29)
         response = self.client.get('/get/main/nodes', query_string={'ownerId':users[0].id}, 
                                    headers=authHeaders, 
                                    content_type='application/json')
         self.assertEqual(response.status_code, 200)
         self.assertIn('nodeCount', response.json)
-        self.assertEqual(response.json['nodeCount'], 2)
+        self.assertEqual(response.json['nodeCount'], 3)
         
     def test_create_two_main_nodes_each_with_two_subnodes_each_with_two_subsubnodes_for_two_users_get_nodes_filter_user1(self):
         users = [create_user_with_index('Test', 1),
@@ -1504,13 +1504,13 @@ class NodeApiTests(MyThingsTest):
                                    content_type='application/json')
         self.assertEqual(response.status_code, 200)
         self.assertIn('nodeCount', response.json)
-        self.assertEqual(response.json['nodeCount'], 28)
+        self.assertEqual(response.json['nodeCount'], 29)
         response = self.client.get('/get/nodes', query_string={'ownerId':users[0].id}, 
                                    headers=authHeaders, 
                                    content_type='application/json')
         self.assertEqual(response.status_code, 200)
         self.assertIn('nodeCount', response.json)
-        self.assertEqual(response.json['nodeCount'], 14)
+        self.assertEqual(response.json['nodeCount'], 15)
         
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
