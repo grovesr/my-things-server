@@ -62,28 +62,22 @@ def unauthorized():
 @auth.login_required
 def getMainNodes():
     validateUser()
-    searchField = request.args.get('searchField', None)
-    searchValue = request.args.get('searchValue', None)
-    ownerId = request.args.get('ownerId', None)
-    type = request.args.get('type', None)
+    filterBy = {}
+    for key,value in iter(request.args.to_dict().items()):
+        if key not in Node.validSearchFields():
+            raise BadRequest('searchField is not valid. Valid fields = ' + str(Node.validSearchFields()))
+        if key != 'orderField' and key != 'orderDir':
+            filterBy[key] = value
     orderField = request.args.get('orderField', 'name')
     orderDir = request.args.get('orderDir', 'desc')
-    if searchField and searchField not in Node.validSearchFields():
-        raise BadRequest('searchField is not valid. Valid fields = ' + str(Node.validSearchFields()))
-    filterBy = {}
-    if searchField and searchValue:
-        filterBy[searchField] = searchValue
     if orderField and orderField not in Node.validOrderByFields():
         raise BadRequest('orderField is not valid. Valid fields = ' + str(Node.validOrderByFields()))
     if orderDir.lower() not in ['asc', 'desc']:
         raise BadRequest('orderBy can only be "asc" or "desc"')
-    if ownerId:
-        filterBy['ownerId'] = ownerId
-        ownerQuery = User.query.filter_by(id=ownerId)
+    if filterBy.get('ownerId', None):
+        ownerQuery = User.query.filter_by(id= filterBy['ownerId'])
         if ownerQuery.count() == 0:
-            raise NotFound('Invalid ownername specified in get/Main/nodes request, so no nodes could be found')
-    if type:
-        filterBy['type'] = type
+            raise NotFound('Invalid ownername specified in get/main/nodes request, so no nodes could be found')
     rootNode = Node.query.filter_by(parent=None).first()
     filterBy['parentId'] = rootNode.id
     nodes = Node.query.filter_by(**filterBy).order_by(orderField).all()
@@ -100,28 +94,22 @@ def getMainNodes():
 @auth.login_required
 def getNodes():
     validateUser()
-    searchField = request.args.get('searchField', None)
-    searchValue = request.args.get('searchValue', None)
-    ownerId = request.args.get('ownerId', None)
-    type = request.args.get('type', None)
+    filterBy = {}
+    for key,value in iter(request.args.to_dict().items()):
+        if key not in Node.validSearchFields():
+            raise BadRequest('searchField is not valid. Valid fields = ' + str(Node.validSearchFields()))
+        if key != 'orderField' and key != 'orderDir':
+            filterBy[key] = value
     orderField = request.args.get('orderField', 'name')
     orderDir = request.args.get('orderDir', 'desc')
-    if searchField and searchField not in Node.validSearchFields():
-        raise BadRequest('searchField is not valid. Valid fields = ' + str(Node.validSearchFields()))
-    filterBy = {}
-    if searchField and searchValue:
-        filterBy[searchField] = searchValue
     if orderField and orderField not in Node.validOrderByFields():
         raise BadRequest('orderField is not valid. Valid fields = ' + str(Node.validOrderByFields()))
     if orderDir.lower() not in ['asc', 'desc']:
         raise BadRequest('orderBy can only be "asc" or "desc"')
-    if ownerId:
-        filterBy['ownerId'] = ownerId
-        ownerQuery = User.query.filter_by(id=ownerId)
+    if filterBy.get('ownerId', None):
+        ownerQuery = User.query.filter_by(id= filterBy['ownerId'])
         if ownerQuery.count() == 0:
             raise NotFound('Invalid ownername specified in get/nodes request, so no nodes could be found')
-    if type:
-        filterBy['type'] = type
     nodes = Node.query.filter(Node.parent != None).filter_by(**filterBy).order_by(orderField).all()
     if len(nodes) == 0:
         raise NotFound('No nodes found')
@@ -139,35 +127,6 @@ def getNodeFromId(nodeId):
     nodeQuery = Node.query.filter_by(id=nodeId)
     if nodeQuery.count() == 0:
         raise NotFound('Node not found')
-    node = nodeQuery.first()
-    node.childCount = len(node.children);
-    return jsonify(node.buildPublicJson())
-
-@main_bp.route('/get/node', methods=['GET'])
-@auth.login_required
-def getNodeFromNameParentOwner():
-    validateUser()
-    nodeName = request.args.get('nodename', None)
-    ownerName = request.args.get('ownername', None)
-    parentName = request.args.get('parentname', None)
-    filterBy = {}
-    if nodeName is  None or ownerName is None:
-        raise BadRequest('URL arguments nodename and ownername must be specified in order to find get/node')
-    filterBy['name'] = nodeName
-    ownerQuery = User.query.filter_by(username=ownerName)
-    if ownerQuery.count() == 0:
-        raise NotFound('Invalid ownername specified in get/node request, so no node could be found')
-    filterBy['ownerId'] = ownerQuery.first().id
-    rootNode = Node.query.filter_by(parentId=None).first()
-    alias = aliased(Node)
-    if parentName is not None:
-        nodeQuery = Node.query.filter_by(name=nodeName).join(alias,Node.parent).filter(alias.name==parentName)
-    else:
-        nodeQuery = Node.query.filter_by(name=nodeName).join(alias,Node.parent).filter(alias.id==rootNode.id)
-    if nodeQuery.count() == 0:
-        raise NotFound('Node not found')
-    if nodeQuery.count() > 1:
-        raise NotFound('More than one node found. Try /get/nodes with the same URL args')
     node = nodeQuery.first()
     node.childCount = len(node.children);
     return jsonify(node.buildPublicJson())

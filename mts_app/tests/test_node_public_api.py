@@ -409,154 +409,6 @@ class NodeApiTests(MyThingsTest):
             self.assertEqual(url_for('main.getNodeFromId',nodeId=response.json['id'], 
                                      _external=True), response.json['uri'])
             
-    def test_get_main_node_from_name_owner(self):
-        authHeaders = {
-            'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
-        }
-        data={'name':'MainNode1', 'owner':self.editUser.username}
-        response = self.client.post('/add/node',
-                                 data=json.dumps(data),
-                                 content_type='application/json',
-                                 headers=authHeaders)
-        self.assertEqual(response.status_code, 201)
-        response = self.client.get('/get/node?ownername=Edit&nodename=MainNode1',
-                                 headers=authHeaders)
-        self.assertEqual(response.status_code, 200)
-        self.assertIn('name', response.json)
-        self.assertEqual('MainNode1', response.json['name'])
-        self.assertIn('uri', response.json)
-        with current_app.app_context():
-            self.assertEqual(url_for('main.getNodeFromId',nodeId=response.json['id'], 
-                                     _external=True), response.json['uri'])
-            
-    def test_get_main_node_from_bad_name_owner(self):
-        authHeaders = {
-            'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
-        }
-        data={'name':'MainNode1', 'owner':self.editUser.username}
-        response = self.client.post('/add/node',
-                                 data=json.dumps(data),
-                                 content_type='application/json',
-                                 headers=authHeaders)
-        self.assertEqual(response.status_code, 201)
-        response = self.client.get('/get/node?ownername=Edit&nodename=foo',
-                                 headers=authHeaders)
-        self.assertEqual(response.status_code, 404)
-        self.assertIn('error', response.json)
-        self.assertEqual('Node not found', response.json['error'])
-        
-    def test_get_main_node_from_name_bad_owner(self):
-        authHeaders = {
-            'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
-        }
-        data={'name':'MainNode1', 'owner':self.editUser.username}
-        response = self.client.post('/add/node',
-                                 data=json.dumps(data),
-                                 content_type='application/json',
-                                 headers=authHeaders)
-        self.assertEqual(response.status_code, 201)
-        response = self.client.get('/get/node?ownername=foo&nodename=MainNode1',
-                                 headers=authHeaders)
-        self.assertEqual(response.status_code, 404)
-        self.assertIn('error', response.json)
-        self.assertEqual('Invalid ownername specified in get/node request, so no node could be found', response.json['error'])
-
-    def test_get_sub_node_from_name_owner_parent(self):
-            authHeaders = {
-                'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
-            }
-            data={'name':'MainNode1', 'owner':self.editUser.username}
-            response = self.client.post('/add/node',
-                                     data=json.dumps(data),
-                                     content_type='application/json',
-                                     headers=authHeaders)
-            self.assertEqual(response.status_code, 201)
-            data={'name':'SubNode1', 'owner':self.editUser.username, 'parentId':response.json['id']}
-            response = self.client.post('/add/node',
-                                     data=json.dumps(data),
-                                     content_type='application/json',
-                                     headers=authHeaders)
-            self.assertEqual(response.status_code, 201)
-            
-            response = self.client.get('/get/node?ownername=Edit&nodename=SubNode1&parentname=MainNode1',
-                                     headers=authHeaders)
-            self.assertEqual(response.status_code, 200)
-            self.assertIn('name', response.json)
-            self.assertEqual('SubNode1', response.json['name'])
-            self.assertIn('uri', response.json)
-            with current_app.app_context():
-                self.assertEqual(url_for('main.getNodeFromId',nodeId=response.json['id'], 
-                                         _external=True), response.json['uri'])
-                
-    def test_get_sub_node_from_name_owner_null_parent(self):
-            authHeaders = {
-                'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
-            }
-            data={'name':'MainNode1', 'owner':self.editUser.username}
-            response = self.client.post('/add/node',
-                                     data=json.dumps(data),
-                                     content_type='application/json',
-                                     headers=authHeaders)
-            self.assertEqual(response.status_code, 201)
-            data={'name':'SubNode1', 'owner':self.editUser.username, 'parentId':response.json['id']}
-            response = self.client.post('/add/node',
-                                     data=json.dumps(data),
-                                     content_type='application/json',
-                                     headers=authHeaders)
-            self.assertEqual(response.status_code, 201)
-            
-            response = self.client.get('/get/node?ownername=Edit&nodename=SubNode1',
-                                     headers=authHeaders)
-            self.assertEqual(response.status_code, 404)
-            self.assertIn('error', response.json)
-            self.assertEqual('Node not found', response.json['error'])
-            
-    def test_get_sub_node_from_name_bad_owner_parent(self):
-            authHeaders = {
-                'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
-            }
-            data={'name':'MainNode1', 'owner':self.editUser.username}
-            response = self.client.post('/add/node',
-                                     data=json.dumps(data),
-                                     content_type='application/json',
-                                     headers=authHeaders)
-            self.assertEqual(response.status_code, 201)
-            data={'name':'SubNode1', 'owner':self.editUser.username, 'parentId':response.json['id']}
-            response = self.client.post('/add/node',
-                                     data=json.dumps(data),
-                                     content_type='application/json',
-                                     headers=authHeaders)
-            self.assertEqual(response.status_code, 201)
-            
-            response = self.client.get('/get/node?ownername=foo&nodename=SubNode1',
-                                     headers=authHeaders)
-            self.assertEqual(response.status_code, 404)
-            self.assertIn('error', response.json)
-            self.assertEqual('Invalid ownername specified in get/node request, so no node could be found', response.json['error'])
-        
-    def test_get_sub_node_from_name_wrong_owner_parent(self):
-            authHeaders = {
-                'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
-            }
-            data={'name':'MainNode1', 'owner':self.editUser.username}
-            response = self.client.post('/add/node',
-                                     data=json.dumps(data),
-                                     content_type='application/json',
-                                     headers=authHeaders)
-            self.assertEqual(response.status_code, 201)
-            data={'name':'SubNode1', 'owner':self.editUser.username, 'parentId':response.json['id']}
-            response = self.client.post('/add/node',
-                                     data=json.dumps(data),
-                                     content_type='application/json',
-                                     headers=authHeaders)
-            self.assertEqual(response.status_code, 201)
-            
-            response = self.client.get('/get/node?ownername=Readonly&nodename=SubNode1',
-                                     headers=authHeaders)
-            self.assertEqual(response.status_code, 404)
-            self.assertIn('error', response.json)
-            self.assertEqual('Node not found', response.json['error']) 
-        
     def test_update_node_edit_access(self):
         authHeaders = {
             'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
@@ -1129,7 +981,7 @@ class NodeApiTests(MyThingsTest):
         response = self.client.get('/get/main/nodes?ownerId=999', headers=authHeaders)
         self.assertEqual(response.status_code, 404)
         self.assertIn('error', response.json)
-        self.assertEqual('Invalid ownername specified in get/Main/nodes request, so no nodes could be found', response.json['error'])
+        self.assertEqual('Invalid ownername specified in get/main/nodes request, so no nodes could be found', response.json['error'])
             
     def test_get_main_nodes_filter_wrong_owner(self):
         authHeaders = {
@@ -1631,7 +1483,7 @@ class NodeApiTests(MyThingsTest):
         self.assertEqual(response.status_code, 200)
         self.assertIn('nodeCount', response.json)
         self.assertEqual(response.json['nodeCount'], 28)
-        response = self.client.get('/get/main/nodes', query_string={'searchField': 'ownerId', 'searchValue':users[0].id}, 
+        response = self.client.get('/get/main/nodes', query_string={'ownerId':users[0].id}, 
                                    headers=authHeaders, 
                                    content_type='application/json')
         self.assertEqual(response.status_code, 200)
@@ -1653,7 +1505,7 @@ class NodeApiTests(MyThingsTest):
         self.assertEqual(response.status_code, 200)
         self.assertIn('nodeCount', response.json)
         self.assertEqual(response.json['nodeCount'], 28)
-        response = self.client.get('/get/nodes', query_string={'searchField': 'ownerId', 'searchValue':users[0].id}, 
+        response = self.client.get('/get/nodes', query_string={'ownerId':users[0].id}, 
                                    headers=authHeaders, 
                                    content_type='application/json')
         self.assertEqual(response.status_code, 200)
