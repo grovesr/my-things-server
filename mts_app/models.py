@@ -129,22 +129,22 @@ class Node(db.Model):
         else:
             parentId = self.parent.id
         if self.dateTried is None:
-            dateTried = 'None'
+            dateTried = None
         else:
             dateTried = self.dateTried.strftime('%Y/%m/%d')
         if self.dateReviewed is None:
-            dateReviewed = 'None'
+            dateReviewed = None
         else:
             dateReviewed = self.dateReviewed.strftime('%Y/%m/%d')
         if self.parent:
             parent = self.parent.name
         else:
-            parent = 'None'
+            parent = None
         return {'name': self.name,
                 'id': self.id, 
                 'type': self.type,
                 'description': self.description, 
-                'nodeInfo': json.dumps(self.nodeInfo),
+                'nodeInfo': self.nodeInfo,
                 'haveTried':self.haveTried, 
                 'dateTried':dateTried,
                 'rating':self.rating,
@@ -159,6 +159,9 @@ class Node(db.Model):
     def buildPublicJson(self):
         publicJson = self.buildJson()
         publicJson['uri'] = url_for('main.getNodeFromId', nodeId=self.id, _external=True)
+        rootNode = Node.query.filter_by(parent=None).first()
+        if self.parentId == rootNode.id:
+            publicJson['parentId'] = None
         return publicJson
 
 class User(db.Model):

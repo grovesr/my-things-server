@@ -845,7 +845,7 @@ class NodeApiTests(MyThingsTest):
         self.assertIn('parentName', mainNodeJson1)
         self.assertEqual(self.rootNode.name, mainNodeJson1['parentName'])
         self.assertIn('parentId', mainNodeJson1)
-        self.assertEqual(self.rootNode.id, mainNodeJson1['parentId'])
+        self.assertEqual(None, mainNodeJson1['parentId'])
         self.assertIn('uri',mainNodeJson1)
         self.assertIn('uri',mainNodeJson1)
         with current_app.app_context():
@@ -860,7 +860,7 @@ class NodeApiTests(MyThingsTest):
         self.assertIn('parentName', mainNodeJson2)
         self.assertEqual(self.rootNode.name, mainNodeJson2['parentName'])
         self.assertIn('parentId', mainNodeJson2)
-        self.assertEqual(self.rootNode.id, mainNodeJson2['parentId'])
+        self.assertEqual(None, mainNodeJson2['parentId'])
         self.assertIn('uri',mainNodeJson2)
         self.assertIn('uri',mainNodeJson2)
         with current_app.app_context():
@@ -902,7 +902,7 @@ class NodeApiTests(MyThingsTest):
         self.assertIn('parentName', mainNodeJson1)
         self.assertEqual(self.rootNode.name, mainNodeJson1['parentName'])
         self.assertIn('parentId', mainNodeJson1)
-        self.assertEqual(self.rootNode.id, mainNodeJson1['parentId'])
+        self.assertEqual(None, mainNodeJson1['parentId'])
         self.assertIn('uri',mainNodeJson1)
         self.assertIn('uri',mainNodeJson1)
         with current_app.app_context():
@@ -917,7 +917,7 @@ class NodeApiTests(MyThingsTest):
         self.assertIn('parentName', mainNodeJson2)
         self.assertEqual(self.rootNode.name, mainNodeJson2['parentName'])
         self.assertIn('parentId', mainNodeJson2)
-        self.assertEqual(self.rootNode.id, mainNodeJson2['parentId'])
+        self.assertEqual(None, mainNodeJson2['parentId'])
         self.assertIn('uri',mainNodeJson2)
         self.assertIn('uri',mainNodeJson2)
         with current_app.app_context():
@@ -955,7 +955,7 @@ class NodeApiTests(MyThingsTest):
         self.assertIn('parentName',nodeResponse)
         self.assertEqual(self.rootNode.name, nodeResponse['parentName'])
         self.assertIn('parentId', nodeResponse)
-        self.assertEqual(self.rootNode.id, nodeResponse['parentId'])
+        self.assertEqual(None, nodeResponse['parentId'])
         self.assertIn('uri',nodeResponse)
         self.assertIn('uri',nodeResponse)
         with current_app.app_context():
@@ -1037,7 +1037,7 @@ class NodeApiTests(MyThingsTest):
         self.assertIn('parentName',nodeResponse)
         self.assertEqual(self.rootNode.name, nodeResponse['parentName'])
         self.assertIn('parentId', nodeResponse)
-        self.assertEqual(self.rootNode.id, nodeResponse['parentId'])
+        self.assertEqual(None, nodeResponse['parentId'])
         self.assertIn('uri',nodeResponse)
         self.assertIn('uri',nodeResponse)
         with current_app.app_context():
