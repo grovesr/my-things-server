@@ -124,10 +124,6 @@ class Node(db.Model):
                 'rating']
     
     def buildJson(self):
-        if self.parent is None:
-            parentId = ''
-        else:
-            parentId = self.parent.id
         if self.dateTried is None:
             dateTried = None
         else:
@@ -153,7 +149,7 @@ class Node(db.Model):
                 'ownerName': self.owner.username,
                 'ownerId': self.owner.id,
                 'parentName': parent,
-                'parentId': parentId,
+                'parentId': self.parentId,
                 'childCount': self.childCount}
     
     def buildPublicJson(self):
