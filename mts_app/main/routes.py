@@ -184,6 +184,8 @@ def addNode():
             node.dateReviewed = parse(request.json['dateReviewed']).date()
         if 'rating' in request.json:
             node.rating = request.json['rating']
+        if 'sortIndex' in request.json:
+            node.sortIndex = request.json['sortIndex']
         if 'ownerId' in request.json:
             raise BadRequest('You can''t specify a node''s owner by setting the ownerId attribute. set ''owner=username'' instead')
         db.session.add(node)
@@ -228,6 +230,8 @@ def updateNode(nodeId):
                 raise BadRequest('Provided dateReviewed is not a valid date format')
         if 'rating' in request.json:
             node.rating = request.json['rating']
+        if 'sortIndex' in request.json:
+            node.sortIndex = request.json['sortIndex']
         if 'ownerId' in request.json:
             raise BadRequest('You can''t change a node''s owner with an update/node request' )
         if 'parentId' in request.json:

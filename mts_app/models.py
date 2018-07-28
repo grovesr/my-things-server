@@ -31,6 +31,7 @@ class Node(db.Model):
     review =        db.Column(db.Text,        unique=False, nullable=True)
     rating =        db.Column(db.Integer,     unique=False, nullable=True)
     dateReviewed =  db.Column(db.Date,        unique=False, nullable=True)
+    sortIndex =     db.Column(db.Integer,      unique=False, nullable=True)
     ownerId =       db.Column(db.Integer, db.ForeignKey('user.id'), unique=False, nullable=False)
     parentId =      db.Column(db.Integer, db.ForeignKey('node.id'), unique=False, nullable=True)
     owner =         db.relationship('User', lazy=True)
@@ -91,6 +92,12 @@ class Node(db.Model):
             raise AssertionError('Provided review is not a string')    
         return review
     
+    @validates('sortIndex')
+    def validate_sortIndex(self, key, sortIndex):
+        if not isinstance(sortIndex, int):
+            raise AssertionError('Provided sortIndex is not a number')    
+        return sortIndex
+    
     @validates('dateReviewed')
     def validate_dateReviewed(self, key, dateReviewed):
         if not isinstance(dateReviewed, datetime.date):
@@ -115,7 +122,8 @@ class Node(db.Model):
                 'dateReviewed',
                 'rating',
                 'ownerId',
-                'parentId']
+                'parentId',
+                'sortIndex']
     
     @classmethod
     def validOrderByFields(self):
@@ -146,6 +154,7 @@ class Node(db.Model):
                 'rating':self.rating,
                 'review':self.review, 
                 'dateReviewed':dateReviewed,
+                'sortIndex': self.sortIndex,
                 'ownerName': self.owner.username,
                 'ownerId': self.owner.id,
                 'parentName': parent,
