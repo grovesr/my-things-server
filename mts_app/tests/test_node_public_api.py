@@ -31,7 +31,7 @@ class NodeApiTests(MyThingsTest):
     
     def test_get_main_nodes_no_auth(self):
 
-        response = self.client.get('/get/main/nodes')
+        response = self.client.get('/main/nodes')
         self.assertEqual(response.status_code, 403)
         self.assertIn('error', response.json)
         self.assertEqual('Unauthorized access', response.json['error'])
@@ -39,7 +39,7 @@ class NodeApiTests(MyThingsTest):
     def test_get_main_nodes_bad_login_creds(self):
         authHeaders = {'Authorization': 'Basic %s' % b64encode(b"foo:bar").decode("ascii")
                        }
-        response = self.client.get('/get/main/nodes')
+        response = self.client.get('/main/nodes')
         self.assertEqual(response.status_code, 403)
         self.assertIn('error', response.json)
         self.assertEqual('Unauthorized access', response.json['error'])
@@ -49,7 +49,7 @@ class NodeApiTests(MyThingsTest):
             'Authorization': 'Basic %s' % b64encode(b"Readonly:test").decode("ascii")
         }
         
-        response = self.client.get('/get/main/nodes', headers=authHeaders)
+        response = self.client.get('/main/nodes', headers=authHeaders)
         self.assertEqual(response.status_code, 404)
         self.assertIn('error', response.json)
         self.assertEqual('No main nodes found', response.json['error'])
@@ -59,7 +59,7 @@ class NodeApiTests(MyThingsTest):
             'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
         }
         
-        response = self.client.get('/get/main/nodes', headers=authHeaders)
+        response = self.client.get('/main/nodes', headers=authHeaders)
         self.assertEqual(response.status_code, 404)
         self.assertIn('error', response.json)
         self.assertEqual('No main nodes found', response.json['error'])
@@ -111,50 +111,11 @@ class NodeApiTests(MyThingsTest):
         data={'name':'MainNode1new', 'type':'newType', 'description':'newDescription',
               'nodeInfo':{'new':'info'}, 'haveTried':True, 'review':'newReview',
               'rating':5} 
-        response = self.client.post('/update/node/' + str(response.json['id']),
+        response = self.client.post('/node/' + str(response.json['id']),
                                  data=json.dumps(data),
                                  content_type='application/json',
                                  headers=authHeaders)
         self.assertEqual(response.status_code, 405)
-        
-    def test_update_node_bad_method_get(self):
-        authHeaders = {
-            'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
-        }
-        data={'name':'MainNode1', 'owner':self.editUser.username}
-        response = self.client.post('/add/node',
-                                 data=json.dumps(data),
-                                 content_type='application/json',
-                                 headers=authHeaders)
-        self.assertEqual(response.status_code, 201)
-        data={'name':'MainNode1new', 'type':'newType', 'description':'newDescription',
-              'nodeInfo':{'new':'info'}, 'haveTried':True, 'review':'newReview',
-              'rating':5} 
-        response = self.client.get('/update/node/' + str(response.json['id']),
-                                 data=json.dumps(data),
-                                 content_type='application/json',
-                                 headers=authHeaders)
-        self.assertEqual(response.status_code, 405)
-        
-    def test_update_node_bad_method_delete(self):
-        authHeaders = {
-            'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
-        }
-        data={'name':'MainNode1', 'owner':self.editUser.username}
-        response = self.client.post('/add/node',
-                                 data=json.dumps(data),
-                                 content_type='application/json',
-                                 headers=authHeaders)
-        self.assertEqual(response.status_code, 201)
-        data={'name':'MainNode1new', 'type':'newType', 'description':'newDescription',
-              'nodeInfo':{'new':'info'}, 'haveTried':True, 'review':'newReview',
-              'rating':5} 
-        response = self.client.delete('/update/node/' + str(response.json['id']),
-                                 data=json.dumps(data),
-                                 content_type='application/json',
-                                 headers=authHeaders)
-        self.assertEqual(response.status_code, 405)
-        
     
     def test_get_main_nodes_bad_method_post(self):
         authHeaders = {
@@ -172,7 +133,7 @@ class NodeApiTests(MyThingsTest):
                                  content_type='application/json',
                                  headers=authHeaders)
         self.assertEqual(response.status_code, 201) 
-        response = self.client.post('/get/main/nodes', headers=authHeaders)
+        response = self.client.post('/main/nodes', headers=authHeaders)
         self.assertEqual(response.status_code, 405)
         
     def test_get_main_nodes_bad_method_put(self):
@@ -191,7 +152,7 @@ class NodeApiTests(MyThingsTest):
                                  content_type='application/json',
                                  headers=authHeaders)
         self.assertEqual(response.status_code, 201) 
-        response = self.client.put('/get/main/nodes', headers=authHeaders)
+        response = self.client.put('/main/nodes', headers=authHeaders)
         self.assertEqual(response.status_code, 405)
         
     def test_get_main_nodes_bad_method_delete(self):
@@ -210,7 +171,7 @@ class NodeApiTests(MyThingsTest):
                                  content_type='application/json',
                                  headers=authHeaders)
         self.assertEqual(response.status_code, 201) 
-        response = self.client.delete('/get/main/nodes', headers=authHeaders)
+        response = self.client.delete('/main/nodes', headers=authHeaders)
         self.assertEqual(response.status_code, 405)
     
     def test_get_nodes_bad_method_post(self):
@@ -223,7 +184,7 @@ class NodeApiTests(MyThingsTest):
                 for subNode in subNodes:
                     create_two_sub_nodes_for_parent_node(subNode)
         # we now have a three level hierarchy for two different users we can test against
-        response = self.client.post('/get/nodes', headers=authHeaders, 
+        response = self.client.post('/nodes', headers=authHeaders, 
                                    content_type='application/json')
         self.assertEqual(response.status_code, 405)
         
@@ -237,7 +198,7 @@ class NodeApiTests(MyThingsTest):
                 for subNode in subNodes:
                     create_two_sub_nodes_for_parent_node(subNode)
         # we now have a three level hierarchy for two different users we can test against
-        response = self.client.put('/get/nodes', headers=authHeaders, 
+        response = self.client.put('/nodes', headers=authHeaders, 
                                    content_type='application/json')
         self.assertEqual(response.status_code, 405)
         
@@ -251,25 +212,8 @@ class NodeApiTests(MyThingsTest):
                 for subNode in subNodes:
                     create_two_sub_nodes_for_parent_node(subNode)
         # we now have a three level hierarchy for two different users we can test against
-        response = self.client.delete('/get/nodes', headers=authHeaders, 
+        response = self.client.delete('/nodes', headers=authHeaders, 
                                    content_type='application/json')
-        self.assertEqual(response.status_code, 405)
-    
-    def test_get_node_bad_method_put(self):
-        authHeaders = {
-            'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
-        }
-        data={'name':'MainNode1', 'owner':self.editUser.username}
-        response = self.client.post('/add/node',
-                                 data=json.dumps(data),
-                                 content_type='application/json',
-                                 headers=authHeaders)
-        self.assertEqual(response.status_code, 201)
-        authHeaders = {
-            'Authorization': 'Basic %s' % b64encode(b"Readonly:test").decode("ascii")
-        }
-        response = self.client.put('/get/node/' + str(response.json['id']),
-                                 headers=authHeaders)
         self.assertEqual(response.status_code, 405)
     
     def test_get_node_bad_method_post(self):
@@ -285,24 +229,7 @@ class NodeApiTests(MyThingsTest):
         authHeaders = {
             'Authorization': 'Basic %s' % b64encode(b"Readonly:test").decode("ascii")
         }
-        response = self.client.post('/get/node/' + str(response.json['id']),
-                                 headers=authHeaders)
-        self.assertEqual(response.status_code, 405)
-        
-    def test_get_node_bad_method_delete(self):
-        authHeaders = {
-            'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
-        }
-        data={'name':'MainNode1', 'owner':self.editUser.username}
-        response = self.client.post('/add/node',
-                                 data=json.dumps(data),
-                                 content_type='application/json',
-                                 headers=authHeaders)
-        self.assertEqual(response.status_code, 201)
-        authHeaders = {
-            'Authorization': 'Basic %s' % b64encode(b"Readonly:test").decode("ascii")
-        }
-        response = self.client.delete('/get/node/' + str(response.json['id']),
+        response = self.client.post('/node/' + str(response.json['id']),
                                  headers=authHeaders)
         self.assertEqual(response.status_code, 405)
     
@@ -316,41 +243,11 @@ class NodeApiTests(MyThingsTest):
                                  content_type='application/json',
                                  headers=authHeaders)
         self.assertEqual(response.status_code, 201)  
-        response = self.client.post('/delete/node/' + str(response.json['id']),
+        response = self.client.post('/node/' + str(response.json['id']),
                                  content_type='application/json',
                                  headers=authHeaders)
         self.assertEqual(response.status_code, 405)
-        
-    def test_delete_node_bad_method_get(self):
-        authHeaders = {
-            'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
-        }
-        data={'name':'MainNode1', 'owner':self.editUser.username}
-        response = self.client.post('/add/node',
-                                 data=json.dumps(data),
-                                 content_type='application/json',
-                                 headers=authHeaders)
-        self.assertEqual(response.status_code, 201)  
-        response = self.client.get('/delete/node/' + str(response.json['id']),
-                                 content_type='application/json',
-                                 headers=authHeaders)
-        self.assertEqual(response.status_code, 405)
-        
-    def test_delete_node_bad_method_put(self):
-        authHeaders = {
-            'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
-        }
-        data={'name':'MainNode1', 'owner':self.editUser.username}
-        response = self.client.post('/add/node',
-                                 data=json.dumps(data),
-                                 content_type='application/json',
-                                 headers=authHeaders)
-        self.assertEqual(response.status_code, 201)  
-        response = self.client.put('/delete/node/' + str(response.json['id']),
-                                 content_type='application/json',
-                                 headers=authHeaders)
-        self.assertEqual(response.status_code, 405)
-    
+
     def test_add_node_edit_access(self):
         authHeaders = {
             'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
@@ -399,7 +296,7 @@ class NodeApiTests(MyThingsTest):
         authHeaders = {
             'Authorization': 'Basic %s' % b64encode(b"Readonly:test").decode("ascii")
         }
-        response = self.client.get('/get/node/' + str(response.json['id']),
+        response = self.client.get('/node/' + str(response.json['id']),
                                  headers=authHeaders)
         self.assertEqual(response.status_code, 200)
         self.assertIn('name', response.json)
@@ -423,7 +320,7 @@ class NodeApiTests(MyThingsTest):
               'nodeInfo':{'new':'info'}, 'haveTried':True, 'review':'newReview',
               'rating':5, 'dateTried':'06/11/2018', 'dateReviewed':'06/11/2018',
               'sortIndex':4} 
-        response = self.client.put('/update/node/' + str(response.json['id']),
+        response = self.client.put('/node/' + str(response.json['id']),
                                  data=json.dumps(data),
                                  content_type='application/json',
                                  headers=authHeaders)
@@ -466,7 +363,7 @@ class NodeApiTests(MyThingsTest):
         data={'name':'', 'type':'newType', 'description':'newDescription',
               'nodeInfo':{'new':'info'}, 'haveTried':True, 'review':'newReview',
               'rating':5, 'dateTried':'06/11/2018', 'dateReviewed':'06/11/2018'} 
-        response = self.client.put('/update/node/' + str(response.json['id']),
+        response = self.client.put('/node/' + str(response.json['id']),
                                  data=json.dumps(data),
                                  content_type='application/json',
                                  headers=authHeaders)
@@ -487,7 +384,7 @@ class NodeApiTests(MyThingsTest):
         data={'name':''.join('x' for i in range(129)), 'type':'newType', 'description':'newDescription',
               'nodeInfo':{'new':'info'}, 'haveTried':True, 'review':'newReview',
               'rating':5, 'dateTried':'06/11/2018', 'dateReviewed':'06/11/2018'} 
-        response = self.client.put('/update/node/' + str(response.json['id']),
+        response = self.client.put('/node/' + str(response.json['id']),
                                  data=json.dumps(data),
                                  content_type='application/json',
                                  headers=authHeaders)
@@ -508,7 +405,7 @@ class NodeApiTests(MyThingsTest):
         data={'name':'MainNode1', 'type':'', 'description':'newDescription',
               'nodeInfo':{'new':'info'}, 'haveTried':True, 'review':'newReview',
               'rating':5, 'dateTried':'06/11/2018', 'dateReviewed':'06/11/2018'} 
-        response = self.client.put('/update/node/' + str(response.json['id']),
+        response = self.client.put('/node/' + str(response.json['id']),
                                  data=json.dumps(data),
                                  content_type='application/json',
                                  headers=authHeaders)
@@ -529,7 +426,7 @@ class NodeApiTests(MyThingsTest):
         data={'name':'MainNode1', 'type':''.join('x' for i in range(17)), 'description':'newDescription',
               'nodeInfo':{'new':'info'}, 'haveTried':True, 'review':'newReview',
               'rating':5, 'dateTried':'06/11/2018', 'dateReviewed':'06/11/2018'} 
-        response = self.client.put('/update/node/' + str(response.json['id']),
+        response = self.client.put('/node/' + str(response.json['id']),
                                  data=json.dumps(data),
                                  content_type='application/json',
                                  headers=authHeaders)
@@ -550,7 +447,7 @@ class NodeApiTests(MyThingsTest):
         data={'name':'MainNode1', 'type':'newType', 'description':0,
               'nodeInfo':{'new':'info'}, 'haveTried':True, 'review':'newReview',
               'rating':5, 'dateTried':'06/11/2018', 'dateReviewed':'06/11/2018'} 
-        response = self.client.put('/update/node/' + str(response.json['id']),
+        response = self.client.put('/node/' + str(response.json['id']),
                                  data=json.dumps(data),
                                  content_type='application/json',
                                  headers=authHeaders)
@@ -571,7 +468,7 @@ class NodeApiTests(MyThingsTest):
         data={'name':'MainNode1', 'type':'newType', 'description':'newDescriotion',
               'nodeInfo':'foo', 'haveTried':True, 'review':'newReview',
               'rating':5, 'dateTried':'06/11/2018', 'dateReviewed':'06/11/2018'} 
-        response = self.client.put('/update/node/' + str(response.json['id']),
+        response = self.client.put('/node/' + str(response.json['id']),
                                  data=json.dumps(data),
                                  content_type='application/json',
                                  headers=authHeaders)
@@ -592,7 +489,7 @@ class NodeApiTests(MyThingsTest):
         data={'name':'MainNode1', 'type':'newType', 'description':'newDescriotion',
               'nodeInfo':{'new':'info'}, 'haveTried':'foo', 'review':'newReview',
               'rating':5, 'dateTried':'06/11/2018', 'dateReviewed':'06/11/2018'} 
-        response = self.client.put('/update/node/' + str(response.json['id']),
+        response = self.client.put('/node/' + str(response.json['id']),
                                  data=json.dumps(data),
                                  content_type='application/json',
                                  headers=authHeaders)
@@ -613,7 +510,7 @@ class NodeApiTests(MyThingsTest):
         data={'name':'MainNode1', 'type':'newType', 'description':'newDescriotion',
               'nodeInfo':{'new':'info'}, 'haveTried':True, 'review':0,
               'rating':5, 'dateTried':'06/11/2018', 'dateReviewed':'06/11/2018'} 
-        response = self.client.put('/update/node/' + str(response.json['id']),
+        response = self.client.put('/node/' + str(response.json['id']),
                                  data=json.dumps(data),
                                  content_type='application/json',
                                  headers=authHeaders)
@@ -634,7 +531,7 @@ class NodeApiTests(MyThingsTest):
         data={'name':'MainNode1', 'type':'newType', 'description':'newDescriotion',
               'nodeInfo':{'new':'info'}, 'haveTried':True, 'review':'newReview',
               'rating':'foo', 'dateTried':'06/11/2018', 'dateReviewed':'06/11/2018'} 
-        response = self.client.put('/update/node/' + str(response.json['id']),
+        response = self.client.put('/node/' + str(response.json['id']),
                                  data=json.dumps(data),
                                  content_type='application/json',
                                  headers=authHeaders)
@@ -655,7 +552,7 @@ class NodeApiTests(MyThingsTest):
         data={'name':'MainNode1', 'type':'newType', 'description':'newDescriotion',
               'nodeInfo':{'new':'info'}, 'haveTried':True, 'review':'newReview',
               'rating':-1, 'dateTried':'06/11/2018', 'dateReviewed':'06/11/2018'} 
-        response = self.client.put('/update/node/' + str(response.json['id']),
+        response = self.client.put('/node/' + str(response.json['id']),
                                  data=json.dumps(data),
                                  content_type='application/json',
                                  headers=authHeaders)
@@ -676,7 +573,7 @@ class NodeApiTests(MyThingsTest):
         data={'name':'MainNode1', 'type':'newType', 'description':'newDescriotion',
               'nodeInfo':{'new':'info'}, 'haveTried':True, 'review':'newReview',
               'rating':11, 'dateTried':'06/11/2018', 'dateReviewed':'06/11/2018'} 
-        response = self.client.put('/update/node/' + str(response.json['id']),
+        response = self.client.put('/node/' + str(response.json['id']),
                                  data=json.dumps(data),
                                  content_type='application/json',
                                  headers=authHeaders)
@@ -697,7 +594,7 @@ class NodeApiTests(MyThingsTest):
         data={'name':'MainNode1', 'type':'newType', 'description':'newDescriotion',
               'nodeInfo':{'new':'info'}, 'haveTried':True, 'review':'newReview',
               'rating':5, 'dateTried':'foo', 'dateReviewed':'06/11/2018'} 
-        response = self.client.put('/update/node/' + str(response.json['id']),
+        response = self.client.put('/node/' + str(response.json['id']),
                                  data=json.dumps(data),
                                  content_type='application/json',
                                  headers=authHeaders)
@@ -718,7 +615,7 @@ class NodeApiTests(MyThingsTest):
         data={'name':'MainNode1', 'type':'newType', 'description':'newDescriotion',
               'nodeInfo':{'new':'info'}, 'haveTried':True, 'review':'newReview',
               'rating':5, 'dateTried':'06/11/2018', 'dateReviewed':'foo'} 
-        response = self.client.put('/update/node/' + str(response.json['id']),
+        response = self.client.put('/node/' + str(response.json['id']),
                                  data=json.dumps(data),
                                  content_type='application/json',
                                  headers=authHeaders)
@@ -740,7 +637,7 @@ class NodeApiTests(MyThingsTest):
               'nodeInfo':{'new':'info'}, 'haveTried':True, 'review':'newReview',
               'rating':5, 'dateTried':'06/11/2018', 'dateReviewed':'06/11/2018',
               'sortIndex':'foo'} 
-        response = self.client.put('/update/node/' + str(response.json['id']),
+        response = self.client.put('/node/' + str(response.json['id']),
                                  data=json.dumps(data),
                                  content_type='application/json',
                                  headers=authHeaders)
@@ -764,7 +661,7 @@ class NodeApiTests(MyThingsTest):
         data={'name':'MainNode1new', 'type':'newType', 'description':'newDescription',
               'nodeInfo':{'new':'info'}, 'haveTried':True, 'review':'newReview',
               'rating':5} 
-        response = self.client.put('/update/node/' + str(response.json['id']),
+        response = self.client.put('/node/' + str(response.json['id']),
                                  data=json.dumps(data),
                                  content_type='application/json',
                                  headers=authHeaders)
@@ -854,7 +751,7 @@ class NodeApiTests(MyThingsTest):
                                  content_type='application/json',
                                  headers=authHeaders)
         self.assertEqual(201, response.status_code) 
-        response = self.client.get('/get/main/nodes', headers=authHeaders)
+        response = self.client.get('/main/nodes', headers=authHeaders)
         self.assertEqual(200, response.status_code)
         self.assertIn('nodeCount', response.json)
         self.assertEqual(3, response.json['nodeCount'])
@@ -911,7 +808,7 @@ class NodeApiTests(MyThingsTest):
         authHeaders = {
             'Authorization': 'Basic %s' % b64encode(b"Readonly:test").decode("ascii")
         }
-        response = self.client.get('/get/main/nodes', headers=authHeaders)
+        response = self.client.get('/main/nodes', headers=authHeaders)
         self.assertEqual(200, response.status_code)
         self.assertIn('nodeCount', response.json)
         self.assertEqual(3, response.json['nodeCount'])
@@ -965,7 +862,7 @@ class NodeApiTests(MyThingsTest):
                                  content_type='application/json',
                                  headers=authHeaders)
         self.assertEqual(201, response.status_code) 
-        response = self.client.get('/get/main/nodes?ownerId=' + str(self.editUser.id), headers=authHeaders)
+        response = self.client.get('/main/nodes?ownerId=' + str(self.editUser.id), headers=authHeaders)
         self.assertEqual(200, response.status_code)
         self.assertIn('nodeCount', response.json)
         self.assertEqual(2, response.json['nodeCount'])
@@ -1003,10 +900,10 @@ class NodeApiTests(MyThingsTest):
                                  content_type='application/json',
                                  headers=authHeaders)
         self.assertEqual(201, response.status_code) 
-        response = self.client.get('/get/main/nodes?ownerId=999', headers=authHeaders)
+        response = self.client.get('/main/nodes?ownerId=999', headers=authHeaders)
         self.assertEqual(404, response.status_code)
         self.assertIn('error', response.json)
-        self.assertIn('Invalid ownername specified in get/main/nodes request, so no nodes could be found', response.json['error'])
+        self.assertIn('Invalid ownername specified in main/nodes request, so no nodes could be found', response.json['error'])
             
     def test_get_main_nodes_filter_wrong_owner(self):
         authHeaders = {
@@ -1024,7 +921,7 @@ class NodeApiTests(MyThingsTest):
                                  content_type='application/json',
                                  headers=authHeaders)
         self.assertEqual(201, response.status_code) 
-        response = self.client.get('/get/main/nodes?ownerId=' + str(self.adminUser.id), headers=authHeaders)
+        response = self.client.get('/main/nodes?ownerId=' + str(self.adminUser.id), headers=authHeaders)
         self.assertEqual(404, response.status_code)
         self.assertIn('error', response.json)
         self.assertIn('No main nodes found', response.json['error'])
@@ -1045,7 +942,7 @@ class NodeApiTests(MyThingsTest):
                                  content_type='application/json',
                                  headers=authHeaders)
         self.assertEqual(201, response.status_code) 
-        response = self.client.get('/get/main/nodes?type=beer', headers=authHeaders)
+        response = self.client.get('/main/nodes?type=beer', headers=authHeaders)
         self.assertEqual(200, response.status_code)
         self.assertIn('nodeCount', response.json)
         self.assertEqual(2, response.json['nodeCount'])
@@ -1085,7 +982,7 @@ class NodeApiTests(MyThingsTest):
                                  content_type='application/json',
                                  headers=authHeaders)
         self.assertEqual(201, response.status_code) 
-        response = self.client.get('/get/main/nodes?type=foo', headers=authHeaders)
+        response = self.client.get('/main/nodes?type=foo', headers=authHeaders)
         self.assertEqual(404, response.status_code)
         self.assertIn('error', response.json)
         self.assertIn('No main nodes found', response.json['error'])
@@ -1106,7 +1003,7 @@ class NodeApiTests(MyThingsTest):
                                  content_type='application/json',
                                  headers=authHeaders)
         self.assertEqual(201, response.status_code) 
-        response = self.client.get('/get/nodes?ownerId=' + str(self.editUser.id), headers=authHeaders)
+        response = self.client.get('/nodes?ownerId=' + str(self.editUser.id), headers=authHeaders)
         self.assertEqual(200, response.status_code)
         self.assertIn('nodeCount', response.json)
         self.assertEqual(2, response.json['nodeCount'])
@@ -1144,10 +1041,10 @@ class NodeApiTests(MyThingsTest):
                                  content_type='application/json',
                                  headers=authHeaders)
         self.assertEqual(201, response.status_code) 
-        response = self.client.get('/get/nodes?ownerId=999', headers=authHeaders)
+        response = self.client.get('/nodes?ownerId=999', headers=authHeaders)
         self.assertEqual(404, response.status_code)
         self.assertIn('error', response.json)
-        self.assertIn('Invalid ownername specified in get/nodes request, so no nodes could be found', response.json['error'])
+        self.assertIn('Invalid ownername specified in nodes request, so no nodes could be found', response.json['error'])
             
     def test_get_nodes_filter_wrong_owner(self):
         authHeaders = {
@@ -1165,7 +1062,7 @@ class NodeApiTests(MyThingsTest):
                                  content_type='application/json',
                                  headers=authHeaders)
         self.assertEqual(201, response.status_code) 
-        response = self.client.get('/get/nodes?ownerId=' + str(self.adminUser.id), headers=authHeaders)
+        response = self.client.get('/nodes?ownerId=' + str(self.adminUser.id), headers=authHeaders)
         self.assertEqual(404, response.status_code)
         self.assertIn('error', response.json)
         self.assertIn('No nodes found', response.json['error'])
@@ -1186,7 +1083,7 @@ class NodeApiTests(MyThingsTest):
                                  content_type='application/json',
                                  headers=authHeaders)
         self.assertEqual(201, response.status_code) 
-        response = self.client.get('/get/nodes?type=beer', headers=authHeaders)
+        response = self.client.get('/nodes?type=beer', headers=authHeaders)
         self.assertEqual(200, response.status_code)
         self.assertIn('nodeCount', response.json)
         self.assertEqual(2, response.json['nodeCount'])
@@ -1226,7 +1123,7 @@ class NodeApiTests(MyThingsTest):
                                  content_type='application/json',
                                  headers=authHeaders)
         self.assertEqual(201, response.status_code) 
-        response = self.client.get('/get/nodes?type=foo', headers=authHeaders)
+        response = self.client.get('/nodes?type=foo', headers=authHeaders)
         self.assertEqual(404, response.status_code)
         self.assertIn('error', response.json)
         self.assertIn('No nodes found', response.json['error'])
@@ -1260,7 +1157,7 @@ class NodeApiTests(MyThingsTest):
                                  content_type='application/json',
                                  headers=authHeaders)
         self.assertEqual(201, response.status_code)  
-        response = self.client.delete('/delete/node/' + str(response.json['id']),
+        response = self.client.delete('/node/' + str(response.json['id']),
                                  content_type='application/json',
                                  headers=authHeaders)
         self.assertEqual(200, response.status_code)
@@ -1280,7 +1177,7 @@ class NodeApiTests(MyThingsTest):
         authHeaders = {
             'Authorization': 'Basic %s' % b64encode(b"Readonly:test").decode("ascii")
         }
-        response = self.client.delete('/delete/node/' + str(response.json['id']),
+        response = self.client.delete('/node/' + str(response.json['id']),
                                  content_type='application/json',
                                  headers=authHeaders)
         self.assertEqual(403, response.status_code)
@@ -1291,7 +1188,7 @@ class NodeApiTests(MyThingsTest):
         authHeaders = {
             'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
         }
-        response = self.client.delete('/delete/node/' + str(self.rootNode.id),
+        response = self.client.delete('/node/' + str(self.rootNode.id),
                                  content_type='application/json',
                                  headers=authHeaders)
         self.assertEqual(403, response.status_code)
@@ -1343,12 +1240,12 @@ class NodeApiTests(MyThingsTest):
             for subNode in subNodes:
                 create_two_sub_nodes_for_parent_node(subNode)
         # we now have a three level hierarchy we can test against
-        response = self.client.get('/get/nodes', headers=authHeaders, 
+        response = self.client.get('/nodes', headers=authHeaders, 
                                    content_type='application/json')
         self.assertEqual(200, response.status_code)
         self.assertIn('nodeCount', response.json)
         self.assertEqual(15, response.json['nodeCount'])
-        response = self.client.get('/get/main/nodes', headers=authHeaders, 
+        response = self.client.get('/main/nodes', headers=authHeaders, 
                                    content_type='application/json')
         self.assertEqual(200, response.status_code)
         self.assertIn('nodeCount', response.json)
@@ -1364,7 +1261,7 @@ class NodeApiTests(MyThingsTest):
                 for subNode in subNodes:
                     create_two_sub_nodes_for_parent_node(subNode)
         # we now have a three level hierarchy for two different users we can test against
-        response = self.client.get('/get/nodes', headers=authHeaders, 
+        response = self.client.get('/nodes', headers=authHeaders, 
                                    content_type='application/json')
         self.assertEqual(200, response.status_code)
         self.assertIn('nodeCount', response.json)
@@ -1380,7 +1277,7 @@ class NodeApiTests(MyThingsTest):
                 for subNode in subNodes:
                     create_two_sub_nodes_for_parent_node(subNode)
         # we now have a three level hierarchy for two different users we can test against
-        response = self.client.get('/get/main/nodes?ownerId=' + str(users[0].id), headers=authHeaders, 
+        response = self.client.get('/main/nodes?ownerId=' + str(users[0].id), headers=authHeaders, 
                                    content_type='application/json')
         self.assertEqual(200, response.status_code)
         self.assertIn('nodeCount', response.json)
@@ -1401,12 +1298,12 @@ class NodeApiTests(MyThingsTest):
                 for subNode in subNodes:
                     create_two_sub_nodes_for_parent_node(subNode)
         # we now have a three level hierarchy for two different users we can test against
-        response = self.client.get('/get/nodes', headers=authHeaders, 
+        response = self.client.get('/nodes', headers=authHeaders, 
                                    content_type='application/json')
         self.assertEqual(200, response.status_code)
         self.assertIn('nodeCount', response.json)
         self.assertEqual(29, response.json['nodeCount'])
-        response = self.client.get('/get/main/nodes', headers=authHeaders, 
+        response = self.client.get('/main/nodes', headers=authHeaders, 
                                    content_type='application/json')
         self.assertEqual(200, response.status_code)
         self.assertIn('nodeCount', response.json)
@@ -1422,16 +1319,16 @@ class NodeApiTests(MyThingsTest):
                 for subNode in subNodes:
                     create_two_sub_nodes_for_parent_node(subNode)
         # we now have a three level hierarchy for two different users we can test against
-        response = self.client.get('/get/nodes', headers=authHeaders, 
+        response = self.client.get('/nodes', headers=authHeaders, 
                                    content_type='application/json')
         self.assertEqual(200, response.status_code)
         self.assertIn('nodeCount', response.json)
         self.assertEqual(29, response.json['nodeCount'])
         mainNode = Node.query.filter(Node.owner==users[0], Node.parent==self.rootNode).first()
-        response = self.client.delete('/delete/node/' + str(mainNode.id), headers=authHeaders, 
+        response = self.client.delete('/node/' + str(mainNode.id), headers=authHeaders, 
                                    content_type='application/json')
         self.assertEqual(200, response.status_code)
-        response = self.client.get('/get/nodes', headers=authHeaders, 
+        response = self.client.get('/nodes', headers=authHeaders, 
                                    content_type='application/json')
         self.assertEqual(200, response.status_code)
         self.assertIn('nodeCount', response.json)
@@ -1447,17 +1344,17 @@ class NodeApiTests(MyThingsTest):
                 for subNode in subNodes:
                     create_two_sub_nodes_for_parent_node(subNode)
         # we now have a three level hierarchy for two different users we can test against
-        response = self.client.get('/get/nodes', headers=authHeaders, 
+        response = self.client.get('/nodes', headers=authHeaders, 
                                    content_type='application/json')
         self.assertEqual(200, response.status_code)
         self.assertIn('nodeCount', response.json)
         self.assertEqual(29, response.json['nodeCount'])
         mainNode = Node.query.filter(Node.owner==users[0], Node.parent==self.rootNode).first()
         subNode = mainNode.children[0]
-        response = self.client.delete('/delete/node/' + str(subNode.id), headers=authHeaders, 
+        response = self.client.delete('/node/' + str(subNode.id), headers=authHeaders, 
                                    content_type='application/json')
         self.assertEqual(200, response.status_code)
-        response = self.client.get('/get/nodes', headers=authHeaders, 
+        response = self.client.get('/nodes', headers=authHeaders, 
                                    content_type='application/json')
         self.assertEqual(200, response.status_code)
         self.assertIn('nodeCount', response.json)
@@ -1476,7 +1373,7 @@ class NodeApiTests(MyThingsTest):
                 for subNode in subNodes:
                     create_two_sub_nodes_for_parent_node(subNode)
         # we now have a three level hierarchy for two different users we can test against
-        response = self.client.get('/get/nodes', headers=authHeaders, 
+        response = self.client.get('/nodes', headers=authHeaders, 
                                    content_type='application/json')
         self.assertEqual(200, response.status_code)
         self.assertIn('nodeCount', response.json)
@@ -1484,10 +1381,10 @@ class NodeApiTests(MyThingsTest):
         authHeaders = {
             'Authorization': 'Basic %s' % b64encode(b"Admin:test").decode("ascii")
         }
-        response = self.client.delete('/admin/delete/user/' + users[0].username, headers=authHeaders, 
+        response = self.client.delete('/admin/user/' + users[0].username, headers=authHeaders, 
                                    content_type='application/json')
         self.assertEqual(200, response.status_code)
-        response = self.client.get('/get/nodes', headers=authHeaders, 
+        response = self.client.get('/nodes', headers=authHeaders, 
                                    content_type='application/json')
         self.assertEqual(200, response.status_code)
         self.assertIn('nodeCount', response.json)
@@ -1503,12 +1400,12 @@ class NodeApiTests(MyThingsTest):
                 for subNode in subNodes:
                     create_two_sub_nodes_for_parent_node(subNode)
         # we now have a three level hierarchy for two different users we can test against
-        response = self.client.get('/get/nodes', headers=authHeaders, 
+        response = self.client.get('/nodes', headers=authHeaders, 
                                    content_type='application/json')
         self.assertEqual(200, response.status_code)
         self.assertIn('nodeCount', response.json)
         self.assertEqual(29, response.json['nodeCount'])
-        response = self.client.get('/get/main/nodes', query_string={'ownerId':users[0].id}, 
+        response = self.client.get('/main/nodes', query_string={'ownerId':users[0].id}, 
                                    headers=authHeaders, 
                                    content_type='application/json')
         self.assertEqual(200, response.status_code)
@@ -1525,12 +1422,12 @@ class NodeApiTests(MyThingsTest):
                 for subNode in subNodes:
                     create_two_sub_nodes_for_parent_node(subNode)
         # we now have a three level hierarchy for two different users we can test against
-        response = self.client.get('/get/nodes', headers=authHeaders, 
+        response = self.client.get('/nodes', headers=authHeaders, 
                                    content_type='application/json')
         self.assertEqual(200, response.status_code)
         self.assertIn('nodeCount', response.json)
         self.assertEqual(29, response.json['nodeCount'])
-        response = self.client.get('/get/nodes', query_string={'ownerId':users[0].id}, 
+        response = self.client.get('/nodes', query_string={'ownerId':users[0].id}, 
                                    headers=authHeaders, 
                                    content_type='application/json')
         self.assertEqual(200, response.status_code)
