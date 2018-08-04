@@ -233,7 +233,7 @@ def updateNode(nodeId):
                 except ValueError:
                     raise BadRequest('Provided dateReviewed is not a valid date format')
             else:
-               node.dateTried = request.json['dateReviewed']    
+               node.dateReviewed = request.json['dateReviewed']    
         if 'rating' in request.json:
             node.rating = request.json['rating']
         if 'sortIndex' in request.json:

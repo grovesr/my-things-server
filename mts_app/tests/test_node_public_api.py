@@ -417,7 +417,7 @@ class NodeApiTests(MyThingsTest):
         authHeaders = {
             'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
         }
-        data={'name':'MainNode1', 'owner':self.editUser.username}
+        data={'name':'MainNode1', 'owner':self.editUser.username, 'type':'type'}
         response = self.client.post('/add/node',
                                  data=json.dumps(data),
                                  content_type='application/json',
@@ -480,7 +480,7 @@ class NodeApiTests(MyThingsTest):
         authHeaders = {
             'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
         }
-        data={'name':'MainNode1', 'owner':self.editUser.username}
+        data={'name':'MainNode1', 'owner':self.editUser.username, 'description':'description'}
         response = self.client.post('/add/node',
                                  data=json.dumps(data),
                                  content_type='application/json',
@@ -564,7 +564,7 @@ class NodeApiTests(MyThingsTest):
         authHeaders = {
             'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
         }
-        data={'name':'MainNode1', 'owner':self.editUser.username}
+        data={'name':'MainNode1', 'owner':self.editUser.username, 'review':'review'}
         response = self.client.post('/add/node',
                                  data=json.dumps(data),
                                  content_type='application/json',
@@ -606,7 +606,7 @@ class NodeApiTests(MyThingsTest):
         authHeaders = {
             'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
         }
-        data={'name':'MainNode1', 'owner':self.editUser.username}
+        data={'name':'MainNode1', 'owner':self.editUser.username, 'rating':5}
         response = self.client.post('/add/node',
                                  data=json.dumps(data),
                                  content_type='application/json',
@@ -690,7 +690,7 @@ class NodeApiTests(MyThingsTest):
         authHeaders = {
             'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
         }
-        data={'name':'MainNode1', 'owner':self.editUser.username}
+        data={'name':'MainNode1', 'owner':self.editUser.username, 'dateTried':'06/11/2018'}
         response = self.client.post('/add/node',
                                  data=json.dumps(data),
                                  content_type='application/json',
@@ -732,7 +732,7 @@ class NodeApiTests(MyThingsTest):
         authHeaders = {
             'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
         }
-        data={'name':'MainNode1', 'owner':self.editUser.username}
+        data={'name':'MainNode1', 'owner':self.editUser.username, 'dateReviewed':'06/11/2018'}
         response = self.client.post('/add/node',
                                  data=json.dumps(data),
                                  content_type='application/json',
@@ -775,7 +775,7 @@ class NodeApiTests(MyThingsTest):
         authHeaders = {
             'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
         }
-        data={'name':'MainNode1', 'owner':self.editUser.username}
+        data={'name':'MainNode1', 'owner':self.editUser.username, 'sortIndex':5}
         response = self.client.post('/add/node',
                                  data=json.dumps(data),
                                  content_type='application/json',

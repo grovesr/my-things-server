@@ -101,7 +101,7 @@ class Node(db.Model):
     @validates('dateReviewed')
     def validate_dateReviewed(self, key, dateReviewed):
         if dateReviewed is not None and not isinstance(dateReviewed, datetime.date):
-            raise AssertionError('Provided dateTried is not a valid date format')    
+            raise AssertionError('Provided dateReviewed is not a valid date format')    
         return dateReviewed
     
     @validates('rating')
