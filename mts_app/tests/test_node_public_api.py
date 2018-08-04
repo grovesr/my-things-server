@@ -413,6 +413,27 @@ class NodeApiTests(MyThingsTest):
         self.assertIn('error', response.json)
         self.assertIn('Provided type is either empty or > 16 characters long', response.json['error'])
         
+    def test_update_node_null_type(self):
+        authHeaders = {
+            'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
+        }
+        data={'name':'MainNode1', 'owner':self.editUser.username}
+        response = self.client.post('/add/node',
+                                 data=json.dumps(data),
+                                 content_type='application/json',
+                                 headers=authHeaders)
+        self.assertEqual(201, response.status_code)
+        data={'name':'MainNode1', 'type':None, 'description':'newDescription',
+              'nodeInfo':{'new':'info'}, 'haveTried':True, 'review':'newReview',
+              'rating':5, 'dateTried':'06/11/2018', 'dateReviewed':'06/11/2018'} 
+        response = self.client.put('/node/' + str(response.json['id']),
+                                 data=json.dumps(data),
+                                 content_type='application/json',
+                                 headers=authHeaders)
+        self.assertEqual(200, response.status_code)
+        self.assertIn('type', response.json)
+        self.assertEqual(None, response.json['type'])
+        
     def test_update_node_long_type(self):
         authHeaders = {
             'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
@@ -454,6 +475,27 @@ class NodeApiTests(MyThingsTest):
         self.assertEqual(400, response.status_code)
         self.assertIn('error', response.json)
         self.assertIn('Provided description is not a string', response.json['error'])
+        
+    def test_update_node_null_description(self):
+        authHeaders = {
+            'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
+        }
+        data={'name':'MainNode1', 'owner':self.editUser.username}
+        response = self.client.post('/add/node',
+                                 data=json.dumps(data),
+                                 content_type='application/json',
+                                 headers=authHeaders)
+        self.assertEqual(201, response.status_code)
+        data={'name':'MainNode1', 'type':'newType', 'description':None,
+              'nodeInfo':{'new':'info'}, 'haveTried':True, 'review':'newReview',
+              'rating':5, 'dateTried':'06/11/2018', 'dateReviewed':'06/11/2018'} 
+        response = self.client.put('/node/' + str(response.json['id']),
+                                 data=json.dumps(data),
+                                 content_type='application/json',
+                                 headers=authHeaders)
+        self.assertEqual(200, response.status_code)
+        self.assertIn('description', response.json)
+        self.assertEqual(None, response.json['description'])
         
     def test_update_node_non_dict_nodeInfo(self):
         authHeaders = {
@@ -518,6 +560,27 @@ class NodeApiTests(MyThingsTest):
         self.assertIn('error', response.json)
         self.assertIn('Provided review is not a string', response.json['error'])
         
+    def test_update_node_null_review(self):
+        authHeaders = {
+            'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
+        }
+        data={'name':'MainNode1', 'owner':self.editUser.username}
+        response = self.client.post('/add/node',
+                                 data=json.dumps(data),
+                                 content_type='application/json',
+                                 headers=authHeaders)
+        self.assertEqual(201, response.status_code)
+        data={'name':'MainNode1', 'type':'newType', 'description':'newDescriotion',
+              'nodeInfo':{'new':'info'}, 'haveTried':True, 'review':None,
+              'rating':5, 'dateTried':'06/11/2018', 'dateReviewed':'06/11/2018'} 
+        response = self.client.put('/node/' + str(response.json['id']),
+                                 data=json.dumps(data),
+                                 content_type='application/json',
+                                 headers=authHeaders)
+        self.assertEqual(200, response.status_code)
+        self.assertIn('review', response.json)
+        self.assertEqual(None, response.json['review'])
+        
     def test_update_node_non_numeric_rating(self):
         authHeaders = {
             'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
@@ -538,6 +601,27 @@ class NodeApiTests(MyThingsTest):
         self.assertEqual(400, response.status_code)
         self.assertIn('error', response.json)
         self.assertIn('Provided rating must be a number between 0 and 10', response.json['error'])
+        
+    def test_update_node_null_rating(self):
+        authHeaders = {
+            'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
+        }
+        data={'name':'MainNode1', 'owner':self.editUser.username}
+        response = self.client.post('/add/node',
+                                 data=json.dumps(data),
+                                 content_type='application/json',
+                                 headers=authHeaders)
+        self.assertEqual(201, response.status_code)
+        data={'name':'MainNode1', 'type':'newType', 'description':'newDescriotion',
+              'nodeInfo':{'new':'info'}, 'haveTried':True, 'review':'newReview',
+              'rating':None, 'dateTried':'06/11/2018', 'dateReviewed':'06/11/2018'} 
+        response = self.client.put('/node/' + str(response.json['id']),
+                                 data=json.dumps(data),
+                                 content_type='application/json',
+                                 headers=authHeaders)
+        self.assertEqual(200, response.status_code)
+        self.assertIn('rating', response.json)
+        self.assertEqual(None, response.json['rating'])
         
     def test_update_node_negative_rating(self):
         authHeaders = {
@@ -602,6 +686,27 @@ class NodeApiTests(MyThingsTest):
         self.assertIn('error', response.json)
         self.assertIn('Provided dateTried is not a valid date format', response.json['error'])
         
+    def test_update_node_null_dateTried(self):
+        authHeaders = {
+            'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
+        }
+        data={'name':'MainNode1', 'owner':self.editUser.username}
+        response = self.client.post('/add/node',
+                                 data=json.dumps(data),
+                                 content_type='application/json',
+                                 headers=authHeaders)
+        self.assertEqual(201, response.status_code)
+        data={'name':'MainNode1', 'type':'newType', 'description':'newDescriotion',
+              'nodeInfo':{'new':'info'}, 'haveTried':True, 'review':'newReview',
+              'rating':5, 'dateTried':None, 'dateReviewed':'06/11/2018'} 
+        response = self.client.put('/node/' + str(response.json['id']),
+                                 data=json.dumps(data),
+                                 content_type='application/json',
+                                 headers=authHeaders)
+        self.assertEqual(200, response.status_code)
+        self.assertIn('dateTried', response.json)
+        self.assertEqual(None, response.json['dateTried'])
+        
     def test_update_node_invalid_dateReviewed(self):
         authHeaders = {
             'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
@@ -623,6 +728,27 @@ class NodeApiTests(MyThingsTest):
         self.assertIn('error', response.json)
         self.assertIn('Provided dateReviewed is not a valid date format', response.json['error'])
         
+    def test_update_node_null_dateReviewed(self):
+        authHeaders = {
+            'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
+        }
+        data={'name':'MainNode1', 'owner':self.editUser.username}
+        response = self.client.post('/add/node',
+                                 data=json.dumps(data),
+                                 content_type='application/json',
+                                 headers=authHeaders)
+        self.assertEqual(201, response.status_code)
+        data={'name':'MainNode1', 'type':'newType', 'description':'newDescriotion',
+              'nodeInfo':{'new':'info'}, 'haveTried':True, 'review':'newReview',
+              'rating':5, 'dateTried':'06/11/2018', 'dateReviewed':None} 
+        response = self.client.put('/node/' + str(response.json['id']),
+                                 data=json.dumps(data),
+                                 content_type='application/json',
+                                 headers=authHeaders)
+        self.assertEqual(200, response.status_code)
+        self.assertIn('dateReviewed', response.json)
+        self.assertEqual(None, response.json['dateReviewed'])    
+    
     def test_update_node_invalid_sortIndex(self):
         authHeaders = {
             'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
@@ -644,6 +770,28 @@ class NodeApiTests(MyThingsTest):
         self.assertEqual(400, response.status_code)
         self.assertIn('error', response.json)
         self.assertIn('Provided sortIndex is not a number', response.json['error'])
+        
+    def test_update_node_null_sortIndex(self):
+        authHeaders = {
+            'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
+        }
+        data={'name':'MainNode1', 'owner':self.editUser.username}
+        response = self.client.post('/add/node',
+                                 data=json.dumps(data),
+                                 content_type='application/json',
+                                 headers=authHeaders)
+        self.assertEqual(201, response.status_code)
+        data={'name':'MainNode1', 'type':'newType', 'description':'newDescriotion',
+              'nodeInfo':{'new':'info'}, 'haveTried':True, 'review':'newReview',
+              'rating':5, 'dateTried':'06/11/2018', 'dateReviewed':'06/11/2018',
+              'sortIndex':None} 
+        response = self.client.put('/node/' + str(response.json['id']),
+                                 data=json.dumps(data),
+                                 content_type='application/json',
+                                 headers=authHeaders)
+        self.assertEqual(200, response.status_code)
+        self.assertIn('sortIndex', response.json)
+        self.assertEqual(None, response.json['sortIndex'])
         
     def test_update_node_read_access(self):
         authHeaders = {

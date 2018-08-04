@@ -217,17 +217,23 @@ def updateNode(nodeId):
         if 'haveTried' in request.json:
             node.haveTried = request.json['haveTried']
         if 'dateTried' in request.json:
-            try:
-                node.dateTried = parse(request.json['dateTried'])
-            except ValueError:
-                raise BadRequest('Provided dateTried is not a valid date format')
+            if request.json['dateTried'] is not None:
+                try:
+                    node.dateTried = parse(request.json['dateTried'])
+                except ValueError:
+                    raise BadRequest('Provided dateTried is not a valid date format')
+            else:
+               node.dateTried = request.json['dateTried']    
         if 'review' in request.json:
             node.review = request.json['review']
         if 'dateReviewed' in request.json:
-            try:
-                node.dateReviewed = parse(request.json['dateReviewed'])
-            except ValueError:
-                raise BadRequest('Provided dateReviewed is not a valid date format')
+            if request.json['dateReviewed'] is not None:
+                try:
+                    node.dateReviewed = parse(request.json['dateReviewed'])
+                except ValueError:
+                    raise BadRequest('Provided dateReviewed is not a valid date format')
+            else:
+               node.dateTried = request.json['dateReviewed']    
         if 'rating' in request.json:
             node.rating = request.json['rating']
         if 'sortIndex' in request.json:

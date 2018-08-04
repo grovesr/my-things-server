@@ -55,13 +55,13 @@ class Node(db.Model):
     
     @validates('type')
     def validate_type(self, key, type):
-        if len(type) > 16 or len(type) == 0:
+        if type is not None and (len(type) > 16 or len(type) == 0):
             raise AssertionError('Provided type is either empty or > 16 characters long')    
         return type
     
     @validates('description')
     def validate_description(self, key, description):
-        if not isinstance(description, str):
+        if description is not None and not isinstance(description, str):
             raise AssertionError('Provided description is not a string')    
         return description
     
@@ -82,31 +82,31 @@ class Node(db.Model):
     
     @validates('dateTried')
     def validate_dateTried(self, key, dateTried):
-        if not isinstance(dateTried, datetime.date):
+        if dateTried is not None and not isinstance(dateTried, datetime.date):
             raise AssertionError('Provided dateTried is not a valid date format')    
         return dateTried
     
     @validates('review')
     def validate_review(self, key, review):
-        if not isinstance(review, str):
+        if review is not None and not isinstance(review, str):
             raise AssertionError('Provided review is not a string')    
         return review
     
     @validates('sortIndex')
     def validate_sortIndex(self, key, sortIndex):
-        if not isinstance(sortIndex, int):
+        if sortIndex is not None and not isinstance(sortIndex, int):
             raise AssertionError('Provided sortIndex is not a number')    
         return sortIndex
     
     @validates('dateReviewed')
     def validate_dateReviewed(self, key, dateReviewed):
-        if not isinstance(dateReviewed, datetime.date):
+        if dateReviewed is not None and not isinstance(dateReviewed, datetime.date):
             raise AssertionError('Provided dateTried is not a valid date format')    
         return dateReviewed
     
     @validates('rating')
     def validate_rating(self, key, rating):
-        if not isinstance(rating, int) or rating < 0 or rating > 10:
+        if rating is not None and (not isinstance(rating, int) or rating < 0 or rating > 10):
             raise AssertionError('Provided rating must be a number between 0 and 10')    
         return rating
     
