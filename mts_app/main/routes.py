@@ -148,8 +148,12 @@ def deleteNode(nodeId):
 @auth.login_required
 def addNode():
     validateEditor()
-    if not request.json or not 'name' in request.json or not 'owner' in request.json:
-        raise BadRequest('No name and/or owner specified in add/node request')
+    if not request.json or not 'name' in request.json:
+        raise BadRequest('No name specified in add/node request')
+    if not 'owner' in request.json:
+        raise BadRequest('No owner specified in add/node request')
+    if not 'type' in request.json:
+        raise BadRequest('No type specified in add/node request')
     ownerQuery = User.query.filter_by(username=request.json['owner'])
     if ownerQuery.count() == 0:
         raise NotFound('Owner not found. Can''t create node')
@@ -192,7 +196,7 @@ def addNode():
         db.session.flush()
     except IntegrityError as e:
         db.session.rollback()
-        raise BadRequest('This node already exists: ' + str(e))
+        raise BadRequest('This node already exists. Try a different name.')
     else:
         db.session.commit()
     node.childCount = 0
