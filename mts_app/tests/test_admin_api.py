@@ -28,14 +28,14 @@ class AdminApiTests(MyThingsTest):
     
     def test_get_user_no_auth(self):
         
-        response = self.client.get('/admin/get/user/' + self.adminUser.username)
+        response = self.client.get('/admin/user/' + self.adminUser.username)
         self.assertEqual(response.status_code, 403)
         self.assertIn('error', response.json)
         self.assertEqual('Unauthorized access', response.json['error'])
         
     def test_get_user_bad_login_creds(self):
         authHeaders = {'Authorization': 'Basic %s' % b64encode(b"foo:bar").decode("ascii")}
-        response = self.client.get('/admin/get/user/' + self.adminUser.username)
+        response = self.client.get('/admin/user/' + self.adminUser.username)
         self.assertEqual(response.status_code, 403)
         self.assertIn('error', response.json)
         self.assertEqual('Unauthorized access', response.json['error'])
@@ -49,7 +49,7 @@ class AdminApiTests(MyThingsTest):
         
     def test_get_users_no_auth(self):
         
-        response = self.client.get('/admin/get/users')
+        response = self.client.get('/admin/users')
         self.assertEqual(response.status_code, 403)
         self.assertIn('error', response.json)
         self.assertEqual('Unauthorized access', response.json['error'])
@@ -63,21 +63,21 @@ class AdminApiTests(MyThingsTest):
         self.assertEqual('Unauthorized access', response.json['error'])
         
     def test_delete_user_no_auth(self):
-        response = self.client.delete('/admin/delete/user/' + self.readonlyUser.username)
+        response = self.client.delete('/admin/user/' + self.readonlyUser.username)
         self.assertEqual(response.status_code, 403)
         self.assertIn('error', response.json)
         self.assertEqual('Unauthorized access', response.json['error'])
         
     def test_update_user_no_auth(self):
         data = {"email":"test1@example.org"}
-        response = self.client.put('/admin/update/user/' + self.readonlyUser.username,
+        response = self.client.put('/admin/user/' + self.readonlyUser.username,
                                 data=json.dumps(data), content_type='application/json')
         self.assertEqual(response.status_code, 403)
         self.assertIn('error', response.json)
         self.assertEqual('Unauthorized access', response.json['error'])
         
     def test_get_user(self):
-        response = self.client.get('/admin/get/user/' + self.adminUser.username, headers=authHeaders)
+        response = self.client.get('/admin/user/' + self.adminUser.username, headers=authHeaders)
         self.assertEqual(response.status_code, 200)
         self.assertIn('username', response.json)
         self.assertEqual('Admin', response.json['username'])
@@ -90,18 +90,28 @@ class AdminApiTests(MyThingsTest):
         self.assertIn('uri', response.json)
         with current_app.app_context():
             self.assertEqual(url_for('admin.getUser', username=self.adminUser.username, _external=True), response.json['uri'])
+     
+    def test_get_user_readonlyuser_auth(self):
+        authHeaders = {'Authorization': 'Basic %s' % b64encode(b"Readonly:test").decode("ascii")}
+        response = self.client.get('/admin/user/' + self.readonlyUser.username, headers=authHeaders)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('username', response.json)
+        self.assertEqual('Readonly', response.json['username'])
+        self.assertIn('email', response.json)
+        self.assertEqual('readonly@example.com', response.json['email'])
+        self.assertIn('canEdit', response.json)
+        self.assertEqual(False, response.json['canEdit'])
+        self.assertIn('isAdmin', response.json)
+        self.assertEqual(False, response.json['isAdmin'])
+        self.assertIn('uri', response.json)
+        with current_app.app_context():
+            self.assertEqual(url_for('admin.getUser', username=self.readonlyUser.username, _external=True), response.json['uri'])
+        
             
     def test_get_user_bad_method_post(self):
-        response = self.client.post('/admin/get/user/' + self.adminUser.username, headers=authHeaders)
+        response = self.client.post('/admin/user/' + self.adminUser.username, headers=authHeaders)
         self.assertEqual(response.status_code, 405)
         
-    def test_get_user_bad_method_put(self):
-        response = self.client.put('/admin/get/user/' + self.adminUser.username, headers=authHeaders)
-        self.assertEqual(response.status_code, 405)
-        
-    def test_get_user_bad_method_delete(self):
-        response = self.client.delete('/admin/get/user/' + self.adminUser.username, headers=authHeaders)
-        self.assertEqual(response.status_code, 405)
         
     def test_check_user_bad_method_post(self):
         response = self.client.post('/admin/check/user/' + self.adminUser.username, headers=authHeaders)
@@ -116,15 +126,15 @@ class AdminApiTests(MyThingsTest):
         self.assertEqual(response.status_code, 405)
         
     def test_get_users_bad_method_post(self):
-        response = self.client.post('/admin/get/users', headers=authHeaders)
+        response = self.client.post('/admin/users', headers=authHeaders)
         self.assertEqual(response.status_code, 405)
         
     def test_get_users_bad_method_put(self):
-        response = self.client.put('/admin/get/users', headers=authHeaders)
+        response = self.client.put('/admin/users', headers=authHeaders)
         self.assertEqual(response.status_code, 405)
         
     def test_get_users_bad_method_delete(self):
-        response = self.client.delete('/admin/get/users', headers=authHeaders)
+        response = self.client.delete('/admin/users', headers=authHeaders)
         self.assertEqual(response.status_code, 405)
             
     def test_add_user_bad_method_get(self):
@@ -145,20 +155,12 @@ class AdminApiTests(MyThingsTest):
                                  data=json.dumps(data), content_type='application/json')
         self.assertEqual(response.status_code, 405)
         
-    def test_delete_user_bad_method_get(self):
-        response = self.client.get('/admin/delete/user/' + self.readonlyUser.username, headers=authHeaders)
-        self.assertEqual(response.status_code, 405)
-        
-    def test_delete_user_bad_method_put(self):
-        response = self.client.put('/admin/delete/user/' + self.readonlyUser.username, headers=authHeaders)
-        self.assertEqual(response.status_code, 405)
-        
     def test_delete_user_bad_method_post(self):
-        response = self.client.post('/admin/delete/user/' + self.readonlyUser.username, headers=authHeaders)
+        response = self.client.post('/admin/user/' + self.readonlyUser.username, headers=authHeaders)
         self.assertEqual(response.status_code, 405)
             
     def test_get_invalid_user(self):
-        response = self.client.get('/admin/get/user/foo', headers=authHeaders)
+        response = self.client.get('/admin/user/foo', headers=authHeaders)
         self.assertEqual(response.status_code, 404)
         self.assertIn('error', response.json)
         self.assertEqual(response.json['error'], 'User not found')
@@ -176,7 +178,7 @@ class AdminApiTests(MyThingsTest):
         self.assertEqual(response.json['error'], 'User not found')
         
     def test_get_users(self):
-        response = self.client.get('/admin/get/users', headers=authHeaders)
+        response = self.client.get('/admin/users', headers=authHeaders)
         self.assertEqual(response.status_code, 200)
         self.assertIn('userCount', response.json)
         self.assertEqual(response.json['userCount'], 3)
@@ -222,20 +224,20 @@ class AdminApiTests(MyThingsTest):
         self.assertEqual(response.json['error'], 'User already exists')
     
     def test_delete_user(self):
-        response = self.client.delete('/admin/delete/user/' + self.readonlyUser.username, headers=authHeaders)
+        response = self.client.delete('/admin/user/' + self.readonlyUser.username, headers=authHeaders)
         self.assertEqual(response.status_code, 200)
         self.assertIn('result', response.json)
         self.assertEqual(True, response.json['result'])
         
     def test_delete_invalid_user(self):
-        response = self.client.delete('/admin/delete/user/foo', headers=authHeaders)
+        response = self.client.delete('/admin/user/foo', headers=authHeaders)
         self.assertEqual(response.status_code, 404)
         self.assertIn('error', response.json)
         self.assertEqual(response.json['error'], 'User not found')
         
     def test_update_user(self):
         data = {"email":"test1@example.org"}
-        response = self.client.put('/admin/update/user/' + self.readonlyUser.username, headers=authHeaders,
+        response = self.client.put('/admin/user/' + self.readonlyUser.username, headers=authHeaders,
                                 data=json.dumps(data), content_type='application/json')
         self.assertEqual(response.status_code, 200)
         self.assertIn('email', response.json)
@@ -243,7 +245,7 @@ class AdminApiTests(MyThingsTest):
         
     def test_update_invalid_user(self):
         data = {"email":"test1@example.org"}
-        response = self.client.put('/admin/update/user/foo', headers=authHeaders,
+        response = self.client.put('/admin/user/foo', headers=authHeaders,
                                 data=json.dumps(data), content_type='application/json')
         self.assertEqual(response.status_code, 404)
         self.assertIn('error', response.json)

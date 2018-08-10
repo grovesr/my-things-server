@@ -58,7 +58,7 @@ def verify_password(username, password):
 def unauthorized():
     return make_response(jsonify({'error': 'Unauthorized access'}), 403)
 
-@main_bp.route('/get/main/nodes', methods=['GET'])
+@main_bp.route('/main/nodes', methods=['GET'])
 @auth.login_required
 def getMainNodes():
     validateUser()
@@ -75,7 +75,7 @@ def getMainNodes():
     if filterBy.get('ownerId', None):
         ownerQuery = User.query.filter_by(id= filterBy['ownerId'])
         if ownerQuery.count() == 0:
-            raise NotFound('Invalid ownername specified in get/main/nodes request, so no nodes could be found')
+            raise NotFound('Invalid ownername specified in main/nodes request, so no nodes could be found')
     rootNode = Node.query.filter_by(parent=None).first()
     filterBy['parentId'] = rootNode.id
     nodes = Node.query.filter_by(**filterBy).order_by(orderField).all()
@@ -89,7 +89,7 @@ def getMainNodes():
         nodesJson['nodes'].append(node.buildPublicJson())
     return jsonify(nodesJson)
 
-@main_bp.route('/get/nodes', methods=['GET'])
+@main_bp.route('/nodes', methods=['GET'])
 @auth.login_required
 def getNodes():
     validateUser()
@@ -106,7 +106,7 @@ def getNodes():
     if filterBy.get('ownerId', None):
         ownerQuery = User.query.filter_by(id= filterBy['ownerId'])
         if ownerQuery.count() == 0:
-            raise NotFound('Invalid ownername specified in get/nodes request, so no nodes could be found')
+            raise NotFound('Invalid ownername specified in nodes request, so no nodes could be found')
     nodes = Node.query.filter(Node.parent != None).filter_by(**filterBy).order_by(orderField).all()
     if len(nodes) == 0:
         raise NotFound('No nodes found')
@@ -119,7 +119,7 @@ def getNodes():
         nodesJson['nodes'].append(node.buildPublicJson())
     return jsonify(nodesJson)
 
-@main_bp.route('/get/node/<string:nodeId>', methods=['GET'])
+@main_bp.route('/node/<string:nodeId>', methods=['GET'])
 @auth.login_required
 def getNodeFromId(nodeId):
     validateUser()
@@ -130,7 +130,7 @@ def getNodeFromId(nodeId):
     node.childCount = len(node.children);
     return jsonify(node.buildPublicJson())
 
-@main_bp.route('/delete/node/<string:nodeId>', methods=['DELETE'])
+@main_bp.route('/node/<string:nodeId>', methods=['DELETE'])
 @auth.login_required
 def deleteNode(nodeId):
     validateEditor()
@@ -148,8 +148,12 @@ def deleteNode(nodeId):
 @auth.login_required
 def addNode():
     validateEditor()
-    if not request.json or not 'name' in request.json or not 'owner' in request.json:
-        raise BadRequest('No name and/or owner specified in add/node request')
+    if not request.json or not 'name' in request.json:
+        raise BadRequest('No name specified in add/node request')
+    if not 'owner' in request.json:
+        raise BadRequest('No owner specified in add/node request')
+    if not 'type' in request.json:
+        raise BadRequest('No type specified in add/node request')
     ownerQuery = User.query.filter_by(username=request.json['owner'])
     if ownerQuery.count() == 0:
         raise NotFound('Owner not found. Can''t create node')
@@ -192,13 +196,13 @@ def addNode():
         db.session.flush()
     except IntegrityError as e:
         db.session.rollback()
-        raise BadRequest('This node already exists: ' + str(e))
+        raise BadRequest('This node already exists. Try a different name.')
     else:
         db.session.commit()
     node.childCount = 0
     return jsonify(node.buildPublicJson()), 201
 
-@main_bp.route('/update/node/<string:nodeId>', methods=['PUT'])
+@main_bp.route('/node/<string:nodeId>', methods=['PUT'])
 @auth.login_required
 def updateNode(nodeId):
     validateEditor()
@@ -217,17 +221,23 @@ def updateNode(nodeId):
         if 'haveTried' in request.json:
             node.haveTried = request.json['haveTried']
         if 'dateTried' in request.json:
-            try:
-                node.dateTried = parse(request.json['dateTried'])
-            except ValueError:
-                raise BadRequest('Provided dateTried is not a valid date format')
+            if request.json['dateTried'] is not None:
+                try:
+                    node.dateTried = parse(request.json['dateTried'])
+                except ValueError:
+                    raise BadRequest('Provided dateTried is not a valid date format')
+            else:
+               node.dateTried = request.json['dateTried']    
         if 'review' in request.json:
             node.review = request.json['review']
         if 'dateReviewed' in request.json:
-            try:
-                node.dateReviewed = parse(request.json['dateReviewed'])
-            except ValueError:
-                raise BadRequest('Provided dateReviewed is not a valid date format')
+            if request.json['dateReviewed'] is not None:
+                try:
+                    node.dateReviewed = parse(request.json['dateReviewed'])
+                except ValueError:
+                    raise BadRequest('Provided dateReviewed is not a valid date format')
+            else:
+               node.dateReviewed = request.json['dateReviewed']    
         if 'rating' in request.json:
             node.rating = request.json['rating']
         if 'sortIndex' in request.json:

@@ -104,7 +104,7 @@ def addUser():
 @admin_bp.route('/check/user/<string:username>', methods=['GET'])
 @auth.login_required
 def checkUser(username):
-    validateAdmin()
+    validateUser()
     userQuery = User.query.filter_by(username=username)
     if userQuery.count() == 0:
         raise NotFound('User not found')
@@ -112,17 +112,17 @@ def checkUser(username):
     returnJson = {user.username + ' exists': userQuery.count() == 1}
     return jsonify(returnJson)
 
-@admin_bp.route('/get/user/<string:username>', methods=['GET'])
+@admin_bp.route('/user/<string:username>', methods=['GET'])
 @auth.login_required
 def getUser(username):
-    validateAdmin()
+    validateUser()
     userQuery = User.query.filter_by(username=username)
     if not userQuery.count():
         raise NotFound('User not found')
     user = userQuery.first()
     return jsonify(user.buildPublicJson())
 
-@admin_bp.route('/get/users', methods=['GET'])
+@admin_bp.route('/users', methods=['GET'])
 @auth.login_required
 def getUsers():
     validateAdmin()
@@ -135,7 +135,7 @@ def getUsers():
         usersJson['users'].append(user.buildPublicJson())
     return jsonify(usersJson)
 
-@admin_bp.route('/delete/user/<string:username>', methods=['DELETE'])
+@admin_bp.route('/user/<string:username>', methods=['DELETE'])
 @auth.login_required
 def deleteUser(username):
     validateAdmin()
@@ -146,7 +146,7 @@ def deleteUser(username):
     db.session.commit()
     return jsonify({'result': userQuery.count() == 0})
 
-@admin_bp.route('/update/user/<string:username>', methods=['PUT'])
+@admin_bp.route('/user/<string:username>', methods=['PUT'])
 @auth.login_required
 def updateUser(username):
     validateAdmin()
