@@ -600,7 +600,7 @@ class NodeApiTests(MyThingsTest):
                                  headers=authHeaders)
         self.assertEqual(400, response.status_code)
         self.assertIn('error', response.json)
-        self.assertIn('Provided rating must be a number between 0 and 10', response.json['error'])
+        self.assertIn('Provided rating must resolve to a number', response.json['error'])
         
     def test_update_node_null_rating(self):
         authHeaders = {
@@ -642,9 +642,9 @@ class NodeApiTests(MyThingsTest):
                                  headers=authHeaders)
         self.assertEqual(400, response.status_code)
         self.assertIn('error', response.json)
-        self.assertIn('Provided rating must be a number between 0 and 10', response.json['error'])
+        self.assertIn('Provided rating must be a number between 0 and 5', response.json['error'])
         
-    def test_update_node_greater_than_10_rating(self):
+    def test_update_node_greater_than_5_rating(self):
         authHeaders = {
             'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
         }
@@ -656,14 +656,14 @@ class NodeApiTests(MyThingsTest):
         self.assertEqual(201, response.status_code)
         data={'name':'MainNode1', 'type':'newType', 'description':'newDescriotion',
               'nodeInfo':{'new':'info'}, 'haveTried':True, 'review':'newReview',
-              'rating':11, 'dateTried':'06/11/2018', 'dateReviewed':'06/11/2018'} 
+              'rating':6, 'dateTried':'06/11/2018', 'dateReviewed':'06/11/2018'} 
         response = self.client.put('/node/' + str(response.json['id']),
                                  data=json.dumps(data),
                                  content_type='application/json',
                                  headers=authHeaders)
         self.assertEqual(400, response.status_code)
         self.assertIn('error', response.json)
-        self.assertIn('Provided rating must be a number between 0 and 10', response.json['error'])
+        self.assertIn('Provided rating must be a number between 0 and 5', response.json['error'])
         
     def test_update_node_invalid_dateTried(self):
         authHeaders = {
@@ -769,7 +769,29 @@ class NodeApiTests(MyThingsTest):
                                  headers=authHeaders)
         self.assertEqual(400, response.status_code)
         self.assertIn('error', response.json)
-        self.assertIn('Provided sortIndex is not a number', response.json['error'])
+        self.assertIn('Provided sortIndex must resolve to a number', response.json['error'])
+        
+    def test_update_node_negative_sortIndex(self):
+        authHeaders = {
+            'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
+        }
+        data={'name':'MainNode1', 'owner':self.editUser.username, 'type': 'books'}
+        response = self.client.post('/add/node',
+                                 data=json.dumps(data),
+                                 content_type='application/json',
+                                 headers=authHeaders)
+        self.assertEqual(201, response.status_code)
+        data={'name':'MainNode1', 'type':'newType', 'description':'newDescriotion',
+              'nodeInfo':{'new':'info'}, 'haveTried':True, 'review':'newReview',
+              'rating':5, 'dateTried':'06/11/2018', 'dateReviewed':'06/11/2018',
+              'sortIndex':-1} 
+        response = self.client.put('/node/' + str(response.json['id']),
+                                 data=json.dumps(data),
+                                 content_type='application/json',
+                                 headers=authHeaders)
+        self.assertEqual(400, response.status_code)
+        self.assertIn('error', response.json)
+        self.assertIn('Provided sortIndex must be an integer > 0', response.json['error'])
         
     def test_update_node_null_sortIndex(self):
         authHeaders = {

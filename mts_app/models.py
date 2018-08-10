@@ -94,9 +94,16 @@ class Node(db.Model):
     
     @validates('sortIndex')
     def validate_sortIndex(self, key, sortIndex):
-        if sortIndex is not None and not isinstance(sortIndex, int):
-            raise AssertionError('Provided sortIndex is not a number')    
-        return sortIndex
+        if sortIndex is not None:
+            try:
+                numericSortIndex = int(sortIndex)
+            except ValueError:
+                raise AssertionError('Provided sortIndex must resolve to a number')
+            if (not isinstance(numericSortIndex, int) or numericSortIndex < 0):
+                raise AssertionError('Provided sortIndex must be an integer > 0')  
+        else: 
+            numericSortIndex = None  
+        return numericSortIndex
     
     @validates('dateReviewed')
     def validate_dateReviewed(self, key, dateReviewed):
@@ -106,9 +113,16 @@ class Node(db.Model):
     
     @validates('rating')
     def validate_rating(self, key, rating):
-        if rating is not None and (not isinstance(rating, int) or rating < 0 or rating > 10):
-            raise AssertionError('Provided rating must be a number between 0 and 10')    
-        return rating
+        if rating is not None:
+            try:
+                numericRating = int(rating)
+            except ValueError:
+                raise AssertionError('Provided rating must resolve to a number')
+            if (not isinstance(numericRating, int) or numericRating < 0 or numericRating > 5):
+                raise AssertionError('Provided rating must be a number between 0 and 5')  
+        else: 
+            numericRating = None  
+        return numericRating
     
     @classmethod
     def validSearchFields(self):
