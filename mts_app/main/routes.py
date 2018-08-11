@@ -79,8 +79,6 @@ def getMainNodes():
     rootNode = Node.query.filter_by(parent=None).first()
     filterBy['parentId'] = rootNode.id
     nodes = Node.query.filter_by(**filterBy).order_by(orderField).all()
-    if len(nodes) == 0:
-        raise NotFound('No main nodes found')
     nodes.append(rootNode)
     nodesJson = {'nodes':[]}
     nodesJson['nodeCount'] = len(nodes)
@@ -108,8 +106,6 @@ def getNodes():
         if ownerQuery.count() == 0:
             raise NotFound('Invalid ownername specified in nodes request, so no nodes could be found')
     nodes = Node.query.filter(Node.parent != None).filter_by(**filterBy).order_by(orderField).all()
-    if len(nodes) == 0:
-        raise NotFound('No nodes found')
     rootNode = Node.query.filter_by(parent=None).first()
     nodes.append(rootNode)
     nodesJson = {'nodes':[]}
