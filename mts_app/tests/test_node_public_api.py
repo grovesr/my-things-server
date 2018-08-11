@@ -50,9 +50,9 @@ class NodeApiTests(MyThingsTest):
         }
         
         response = self.client.get('/main/nodes', headers=authHeaders)
-        self.assertEqual(response.status_code, 404)
-        self.assertIn('error', response.json)
-        self.assertEqual('No main nodes found', response.json['error'])
+        self.assertEqual(200, response.status_code)
+        self.assertIn('nodeCount', response.json)
+        self.assertEqual(1, response.json['nodeCount'])
     
     def test_get_main_nodes_no_nodes_edit_access(self):
         authHeaders = {
@@ -60,9 +60,9 @@ class NodeApiTests(MyThingsTest):
         }
         
         response = self.client.get('/main/nodes', headers=authHeaders)
-        self.assertEqual(response.status_code, 404)
-        self.assertIn('error', response.json)
-        self.assertEqual('No main nodes found', response.json['error'])
+        self.assertEqual(200, response.status_code)
+        self.assertIn('nodeCount', response.json)
+        self.assertEqual(1, response.json['nodeCount'])
     
     
     def test_add_node_bad_method_get(self):
@@ -1122,9 +1122,9 @@ class NodeApiTests(MyThingsTest):
                                  headers=authHeaders)
         self.assertEqual(201, response.status_code) 
         response = self.client.get('/main/nodes?ownerId=' + str(self.adminUser.id), headers=authHeaders)
-        self.assertEqual(404, response.status_code)
-        self.assertIn('error', response.json)
-        self.assertIn('No main nodes found', response.json['error'])
+        self.assertEqual(200, response.status_code)
+        self.assertIn('nodeCount', response.json)
+        self.assertEqual(1, response.json['nodeCount'])
             
     def test_get_main_nodes_filter_type(self):
         authHeaders = {
@@ -1183,9 +1183,9 @@ class NodeApiTests(MyThingsTest):
                                  headers=authHeaders)
         self.assertEqual(201, response.status_code) 
         response = self.client.get('/main/nodes?type=foo', headers=authHeaders)
-        self.assertEqual(404, response.status_code)
-        self.assertIn('error', response.json)
-        self.assertIn('No main nodes found', response.json['error'])
+        self.assertEqual(200, response.status_code)
+        self.assertIn('nodeCount', response.json)
+        self.assertEqual(1, response.json['nodeCount'])
         
     def test_get_nodes_filter_owner(self):
         authHeaders = {
@@ -1263,9 +1263,9 @@ class NodeApiTests(MyThingsTest):
                                  headers=authHeaders)
         self.assertEqual(201, response.status_code) 
         response = self.client.get('/nodes?ownerId=' + str(self.adminUser.id), headers=authHeaders)
-        self.assertEqual(404, response.status_code)
-        self.assertIn('error', response.json)
-        self.assertIn('No nodes found', response.json['error'])
+        self.assertEqual(200, response.status_code)
+        self.assertIn('nodeCount', response.json)
+        self.assertEqual(1, response.json['nodeCount'])
             
     def test_get_nodes_filter_type(self):
         authHeaders = {
@@ -1324,9 +1324,9 @@ class NodeApiTests(MyThingsTest):
                                  headers=authHeaders)
         self.assertEqual(201, response.status_code) 
         response = self.client.get('/nodes?type=foo', headers=authHeaders)
-        self.assertEqual(404, response.status_code)
-        self.assertIn('error', response.json)
-        self.assertIn('No nodes found', response.json['error'])
+        self.assertEqual(200, response.status_code)
+        self.assertIn('nodeCount', response.json)
+        self.assertEqual(1, response.json['nodeCount'])
 
     def test_create_two_equal_main_nodes_edit_access(self):
         authHeaders = {
