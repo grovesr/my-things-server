@@ -623,6 +623,27 @@ class NodeApiTests(MyThingsTest):
         self.assertIn('rating', response.json)
         self.assertEqual(None, response.json['rating'])
         
+    def test_update_node_empty_rating(self):
+        authHeaders = {
+            'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
+        }
+        data={'name':'MainNode1', 'owner':self.editUser.username, 'rating':5, 'type': 'books'}
+        response = self.client.post('/add/node',
+                                 data=json.dumps(data),
+                                 content_type='application/json',
+                                 headers=authHeaders)
+        self.assertEqual(201, response.status_code)
+        data={'name':'MainNode1', 'type':'newType', 'description':'newDescriotion',
+              'nodeInfo':{'new':'info'}, 'haveTried':True, 'review':'newReview',
+              'rating':'', 'dateTried':'06/11/2018', 'dateReviewed':'06/11/2018'} 
+        response = self.client.put('/node/' + str(response.json['id']),
+                                 data=json.dumps(data),
+                                 content_type='application/json',
+                                 headers=authHeaders)
+        self.assertEqual(200, response.status_code)
+        self.assertIn('rating', response.json)
+        self.assertEqual(None, response.json['rating'])
+        
     def test_update_node_negative_rating(self):
         authHeaders = {
             'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
@@ -707,6 +728,27 @@ class NodeApiTests(MyThingsTest):
         self.assertIn('dateTried', response.json)
         self.assertEqual(None, response.json['dateTried'])
         
+    def test_update_node_empty_dateTried(self):
+        authHeaders = {
+            'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
+        }
+        data={'name':'MainNode1', 'owner':self.editUser.username, 'dateTried':'06/11/2018', 'type': 'books'}
+        response = self.client.post('/add/node',
+                                 data=json.dumps(data),
+                                 content_type='application/json',
+                                 headers=authHeaders)
+        self.assertEqual(201, response.status_code)
+        data={'name':'MainNode1', 'type':'newType', 'description':'newDescriotion',
+              'nodeInfo':{'new':'info'}, 'haveTried':True, 'review':'newReview',
+              'rating':5, 'dateTried':'', 'dateReviewed':'06/11/2018'} 
+        response = self.client.put('/node/' + str(response.json['id']),
+                                 data=json.dumps(data),
+                                 content_type='application/json',
+                                 headers=authHeaders)
+        self.assertEqual(200, response.status_code)
+        self.assertIn('dateTried', response.json)
+        self.assertEqual(None, response.json['dateTried'])
+        
     def test_update_node_invalid_dateReviewed(self):
         authHeaders = {
             'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
@@ -748,6 +790,27 @@ class NodeApiTests(MyThingsTest):
         self.assertEqual(200, response.status_code)
         self.assertIn('dateReviewed', response.json)
         self.assertEqual(None, response.json['dateReviewed'])    
+    
+    def test_update_node_empty_dateReviewed(self):
+        authHeaders = {
+            'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
+        }
+        data={'name':'MainNode1', 'owner':self.editUser.username, 'dateReviewed':'06/11/2018', 'type': 'books'}
+        response = self.client.post('/add/node',
+                                 data=json.dumps(data),
+                                 content_type='application/json',
+                                 headers=authHeaders)
+        self.assertEqual(201, response.status_code)
+        data={'name':'MainNode1', 'type':'newType', 'description':'newDescriotion',
+              'nodeInfo':{'new':'info'}, 'haveTried':True, 'review':'newReview',
+              'rating':5, 'dateTried':'06/11/2018', 'dateReviewed':''} 
+        response = self.client.put('/node/' + str(response.json['id']),
+                                 data=json.dumps(data),
+                                 content_type='application/json',
+                                 headers=authHeaders)
+        self.assertEqual(200, response.status_code)
+        self.assertIn('dateReviewed', response.json)
+        self.assertEqual(None, response.json['dateReviewed'])
     
     def test_update_node_invalid_sortIndex(self):
         authHeaders = {
@@ -807,6 +870,28 @@ class NodeApiTests(MyThingsTest):
               'nodeInfo':{'new':'info'}, 'haveTried':True, 'review':'newReview',
               'rating':5, 'dateTried':'06/11/2018', 'dateReviewed':'06/11/2018',
               'sortIndex':None} 
+        response = self.client.put('/node/' + str(response.json['id']),
+                                 data=json.dumps(data),
+                                 content_type='application/json',
+                                 headers=authHeaders)
+        self.assertEqual(200, response.status_code)
+        self.assertIn('sortIndex', response.json)
+        self.assertEqual(None, response.json['sortIndex'])
+        
+    def test_update_node_empty_sortIndex(self):
+        authHeaders = {
+            'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
+        }
+        data={'name':'MainNode1', 'owner':self.editUser.username, 'sortIndex':5, 'type': 'books'}
+        response = self.client.post('/add/node',
+                                 data=json.dumps(data),
+                                 content_type='application/json',
+                                 headers=authHeaders)
+        self.assertEqual(201, response.status_code)
+        data={'name':'MainNode1', 'type':'newType', 'description':'newDescriotion',
+              'nodeInfo':{'new':'info'}, 'haveTried':True, 'review':'newReview',
+              'rating':5, 'dateTried':'06/11/2018', 'dateReviewed':'06/11/2018',
+              'sortIndex':''} 
         response = self.client.put('/node/' + str(response.json['id']),
                                  data=json.dumps(data),
                                  content_type='application/json',

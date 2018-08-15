@@ -217,7 +217,7 @@ def updateNode(nodeId):
         if 'haveTried' in request.json:
             node.haveTried = request.json['haveTried']
         if 'dateTried' in request.json:
-            if request.json['dateTried'] is not None:
+            if request.json['dateTried'] is not None and request.json['dateTried'] is not '' :
                 try:
                     node.dateTried = parse(request.json['dateTried'])
                 except ValueError:
@@ -227,7 +227,7 @@ def updateNode(nodeId):
         if 'review' in request.json:
             node.review = request.json['review']
         if 'dateReviewed' in request.json:
-            if request.json['dateReviewed'] is not None:
+            if request.json['dateReviewed'] is not None and request.json['dateReviewed'] is not '':
                 try:
                     node.dateReviewed = parse(request.json['dateReviewed'])
                 except ValueError:

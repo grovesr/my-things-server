@@ -82,6 +82,8 @@ class Node(db.Model):
     
     @validates('dateTried')
     def validate_dateTried(self, key, dateTried):
+        if dateTried == '':
+            return None
         if dateTried is not None and not isinstance(dateTried, datetime.date):
             raise AssertionError('Provided dateTried is not a valid date format')    
         return dateTried
@@ -94,6 +96,8 @@ class Node(db.Model):
     
     @validates('sortIndex')
     def validate_sortIndex(self, key, sortIndex):
+        if sortIndex == '':
+            return None
         if sortIndex is not None:
             try:
                 numericSortIndex = int(sortIndex)
@@ -107,12 +111,16 @@ class Node(db.Model):
     
     @validates('dateReviewed')
     def validate_dateReviewed(self, key, dateReviewed):
+        if dateReviewed == '':
+            return None
         if dateReviewed is not None and not isinstance(dateReviewed, datetime.date):
             raise AssertionError('Provided dateReviewed is not a valid date format')    
         return dateReviewed
     
     @validates('rating')
     def validate_rating(self, key, rating):
+        if rating == '':
+            return None
         if rating is not None:
             try:
                 numericRating = int(rating)

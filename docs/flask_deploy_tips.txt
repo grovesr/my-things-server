@@ -66,8 +66,12 @@ quit;
 31. sudo cp deployment/supervisor/conf.d/my-things-server.conf  /etc/supervisor/conf.d/
 32. sudo supervisorctl reload
 33. sudo cp deployment/nginx/sites-enabled/my-things-server /etc/nginx/sites-enabled/
-34. sudo seervice nginx reload
+34. sudo service nginx reload
 
-
-
-
+Deploy my-things-client as well
+make sure to cd /home/ubuntu (ubuntu is the sudo user)
+ 1. git clone https://github.com/grovesr/my-things-client
+ 2. on laptop: copy .secrets.js file into my-things-server/deployment/vagrant directory (shared dir with virtualbox)
+ 3. sudo mv /vagrant/.secrets.js static/my_books
+ 4. on server: sudo cp deployment/nginx/my-things-client /etc/nginx/sites-enabled
+ 5. sudo service nginx reload
