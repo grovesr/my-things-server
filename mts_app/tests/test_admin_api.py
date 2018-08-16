@@ -159,7 +159,7 @@ class AdminApiTests(MyThingsTest):
         self.assertEqual(response.json['error'], 'User not found')
     
     def test_check_user(self):
-        response = self.client.get('/admin/check/user/' + self.adminUser.username)
+        response = self.client.get('/admin/check/user/' + self.adminUser.username, headers=authHeaders)
         self.assertEqual(response.status_code, 200)
         self.assertIn('id', response.json)
         self.assertEqual(self.adminUser.id, response.json['id'])
