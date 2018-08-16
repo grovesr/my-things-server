@@ -40,13 +40,6 @@ class AdminApiTests(MyThingsTest):
         self.assertIn('error', response.json)
         self.assertEqual('Unauthorized access', response.json['error'])
         
-    def test_check_user_no_auth(self):
-        
-        response = self.client.get('/admin/check/user/' + self.adminUser.username)
-        self.assertEqual(response.status_code, 403)
-        self.assertIn('error', response.json)
-        self.assertEqual('Unauthorized access', response.json['error'])
-        
     def test_get_users_no_auth(self):
         
         response = self.client.get('/admin/users')
@@ -166,10 +159,10 @@ class AdminApiTests(MyThingsTest):
         self.assertEqual(response.json['error'], 'User not found')
     
     def test_check_user(self):
-        response = self.client.get('/admin/check/user/' + self.adminUser.username, headers=authHeaders)
+        response = self.client.get('/admin/check/user/' + self.adminUser.username)
         self.assertEqual(response.status_code, 200)
-        self.assertIn(self.adminUser.username + ' exists', response.json)
-        self.assertEqual(response.json['Admin exists'], True)
+        self.assertIn('id', response.json)
+        self.assertEqual(self.adminUser.id, response.json['id'])
         
     def test_check_invalid_user(self):
         response = self.client.get('/admin/check/user/foo', headers=authHeaders)
