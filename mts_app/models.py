@@ -32,7 +32,7 @@ class Node(db.Model):
     rating =        db.Column(db.Integer,     unique=False, nullable=True)
     dateReviewed =  db.Column(db.Date,        unique=False, nullable=True)
     sortIndex =     db.Column(db.Integer,     unique=False, nullable=True)
-    need =          db.Column(db.Boolean,     unique=False, nullable=False, default=True)
+    need =          db.Column(db.Boolean,     unique=False, nullable=False, default=False)
     ownerId =       db.Column(db.Integer, db.ForeignKey('user.id'), unique=False, nullable=False)
     parentId =      db.Column(db.Integer, db.ForeignKey('node.id'), unique=False, nullable=True)
     owner =         db.relationship('User', lazy=True)
