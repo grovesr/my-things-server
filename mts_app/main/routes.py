@@ -238,6 +238,8 @@ def updateNode(nodeId):
             node.rating = request.json['rating']
         if 'sortIndex' in request.json:
             node.sortIndex = request.json['sortIndex']
+        if 'need' in request.json:
+            node.need = request.json['need']
         if 'ownerId' in request.json:
             raise BadRequest('You can''t change a node''s owner with an update/node request' )
         if 'parentId' in request.json:

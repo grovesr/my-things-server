@@ -31,7 +31,8 @@ class Node(db.Model):
     review =        db.Column(db.Text,        unique=False, nullable=True)
     rating =        db.Column(db.Integer,     unique=False, nullable=True)
     dateReviewed =  db.Column(db.Date,        unique=False, nullable=True)
-    sortIndex =     db.Column(db.Integer,      unique=False, nullable=True)
+    sortIndex =     db.Column(db.Integer,     unique=False, nullable=True)
+    need =          db.Column(db.Boolean,     unique=False, nullable=False, default=True)
     ownerId =       db.Column(db.Integer, db.ForeignKey('user.id'), unique=False, nullable=False)
     parentId =      db.Column(db.Integer, db.ForeignKey('node.id'), unique=False, nullable=True)
     owner =         db.relationship('User', lazy=True)
@@ -132,6 +133,15 @@ class Node(db.Model):
             numericRating = None  
         return numericRating
     
+    @validates('need')
+    def validate_need(self, key, need):
+        try:
+            if need != False and need != True:
+                raise AssertionError('need must resolve to a Boolean type')
+        except:
+            raise AssertionError('need must resolve to a Boolean type')
+        return need
+    
     @classmethod
     def validSearchFields(self):
         return ['id',
@@ -145,7 +155,8 @@ class Node(db.Model):
                 'rating',
                 'ownerId',
                 'parentId',
-                'sortIndex']
+                'sortIndex',
+                'need']
     
     @classmethod
     def validOrderByFields(self):
@@ -177,6 +188,7 @@ class Node(db.Model):
                 'review':self.review, 
                 'dateReviewed':dateReviewed,
                 'sortIndex': self.sortIndex,
+                'need': self.need,
                 'ownerName': self.owner.username,
                 'ownerId': self.owner.id,
                 'parentName': parent,

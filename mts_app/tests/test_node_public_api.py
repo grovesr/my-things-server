@@ -319,7 +319,7 @@ class NodeApiTests(MyThingsTest):
         data={'name':'MainNode1new', 'type':'newType', 'description':'newDescription',
               'nodeInfo':{'new':'info'}, 'haveTried':True, 'review':'newReview',
               'rating':5, 'dateTried':'06/11/2018', 'dateReviewed':'06/11/2018',
-              'sortIndex':4} 
+              'sortIndex':4, 'need':False} 
         response = self.client.put('/node/' + str(response.json['id']),
                                  data=json.dumps(data),
                                  content_type='application/json',
@@ -345,6 +345,8 @@ class NodeApiTests(MyThingsTest):
         self.assertEqual('2018/06/11', response.json['dateReviewed'])
         self.assertIn('sortIndex', response.json)
         self.assertEqual(4, response.json['sortIndex'])
+        self.assertIn('need', response.json)
+        self.assertEqual(False, response.json['need'])
         self.assertIn('uri', response.json)
         with current_app.app_context():
             self.assertEqual(url_for('main.getNodeFromId',nodeId=response.json['id'], 
@@ -538,6 +540,28 @@ class NodeApiTests(MyThingsTest):
         self.assertEqual(400, response.status_code)
         self.assertIn('error', response.json)
         self.assertIn('haveTried must resolve to a Boolean type', response.json['error'])
+        
+    def test_update_node_non_boolean_need(self):
+        authHeaders = {
+            'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
+        }
+        data={'name':'MainNode1', 'owner':self.editUser.username, 'type': 'books'}
+        response = self.client.post('/add/node',
+                                 data=json.dumps(data),
+                                 content_type='application/json',
+                                 headers=authHeaders)
+        self.assertEqual(201, response.status_code)
+        data={'name':'MainNode1', 'type':'newType', 'description':'newDescriotion',
+              'nodeInfo':{'new':'info'}, 'haveTried':True, 'review':'newReview',
+              'rating':5, 'dateTried':'06/11/2018', 'dateReviewed':'06/11/2018',
+              'need': 'foo'} 
+        response = self.client.put('/node/' + str(response.json['id']),
+                                 data=json.dumps(data),
+                                 content_type='application/json',
+                                 headers=authHeaders)
+        self.assertEqual(400, response.status_code)
+        self.assertIn('error', response.json)
+        self.assertIn('need must resolve to a Boolean type', response.json['error'])
     
     def test_update_node_non_string_review(self):
         authHeaders = {
