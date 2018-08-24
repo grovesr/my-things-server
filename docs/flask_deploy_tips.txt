@@ -5,13 +5,7 @@
 
 Vagrant.configure("2") do |config|
   config.vm.box = "ubuntu/xenial64"
-  config.vm.network "private_network", ip: "192.168.33.10"
-  config.vm.provider "virtualbox" do |vb|
-    vb.memory = "1024"
-  end
-endVagrant.configure("2") do |config|
-  config.vm.box = "ubuntu/xenial64"
-  config.vm.network "private_network", ip: "192.168.33.10"
+  config.vm.network "public_network", bridge: "wlan0"
   config.vm.provider "virtualbox" do |vb|
     vb.memory = "1024"
   end
@@ -19,7 +13,8 @@ end
 
 5. in the vagrant dir run "vagrant up" to create the virtual machine
 6. ssh into the new virtual machine "vagrant ssh"
- you will be logged in as user vagrant. !!Before doing anything else sudo su ubuntu to switch to the ubuntu userid!!
+ you will be logged in as user vagrant.
+ !!Before doing anything else sudo su ubuntu to switch to the ubuntu userid!!
 7. to disable root login for security edit "sudo nano /etc/ssh/sshd_config" and replace setting for PermitRootLogin with:
 PermitRootLogin no
 8. to disable password logins for security, in the same file change the value for PasswordAuthentication with:
@@ -46,8 +41,8 @@ sudo ufw status
 20. . venv/bin/activate
 21. pip install -r requirements.txt
 22. pip install gunicorn pymysql
-23. echo "export FLASK_APP=my_things_server.py" >> ~/.profile
-23a. echo "export FLASK_ENV=production" >> ~/.profile
+23. echo "export FLASK_APP=my_things_server.py" >> ~/my-things-server/venv/bin/activate
+23a. echo "export FLASK_ENV=production" >> ~/my-things-server/venv/bin/activate
 24. . ~/.profile
 25. . venv/bin/activate
 26. mysql -u root -p
@@ -76,3 +71,4 @@ make sure to cd /home/ubuntu (ubuntu is the sudo user)
  4. on server: sudo cp deployment/nginx/my-things-server /etc/nginx/sites-enabled
  4a. This is a combined nginx conf file that handles routing my-things-server and my-things-client through port 443
  5. sudo service nginx reload
+ 6. sudo ln -fs /home/ubuntu/my-things-client/static ./my-things-client 
