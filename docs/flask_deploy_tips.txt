@@ -48,7 +48,7 @@ sudo ufw status
 26. mysql -u root -p
 27. set up the database
 create database my_things character set utf8 collate utf8_bin;
-create user 'grovesr'@'localhost' identified by 'zse45rdx';
+create user 'grovesr'@'localhost' identified by 'SOME_PASSWORD_HERE';
 grant all privileges on my_things.* to 'grovesr'@'localhost';
 flush privileges;
 create database my_things_test character set utf8 collate utf8_bin;
@@ -71,4 +71,4 @@ make sure to cd /home/ubuntu (ubuntu is the sudo user)
  4. on server: sudo cp deployment/nginx/my-things-server /etc/nginx/sites-enabled
  4a. This is a combined nginx conf file that handles routing my-things-server and my-things-client through port 443
  5. sudo service nginx reload
- 6. sudo ln -fs /home/ubuntu/my-things-client/static ./my-things-client 
+ 6. sudo ln -fs /home/ubuntu/my-things-client/static ./my-things-client
