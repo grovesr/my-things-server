@@ -15,6 +15,21 @@ end
 6. ssh into the new virtual machine "vagrant ssh"
  you will be logged in as user vagrant.
  !!Before doing anything else sudo su ubuntu to switch to the ubuntu userid!!
+6a. If you are not using a vagrant machine you want to disable password logins
+6b. ssh into the machine using root or whatever sudo enabled userid you have
+6c. Create a user account called "ubuntu" that will be used for all server operations going forward.
+sudo adduser --gecos "" ubuntu
+sudo usermod -aG sudo ubuntu
+sudo su ubuntu
+6d. on your laptop:
+ls ~/.ssh
+if this shows "id_rsa  id_rsa.pub" then you have a public keya already and can skip the next step.
+6e. create a public key on your laptop:
+ssh-keygen    take all defaults and this should create the .ssh dir if needed and the ida_rsa and ida_rsa.pub files
+6f. cat ~/.ssh/id_rsa.pub and copy entire output to the copy buffer
+6g. go back to the server ssh terminal and:
+echo <paste-your-key-here> >> ~/.ssh/authorized_keys
+6h. chmod 600 ~/.ssh/authorized_keys
 7. to disable root login for security edit "sudo nano /etc/ssh/sshd_config" and replace setting for PermitRootLogin with:
 PermitRootLogin no
 8. to disable password logins for security, in the same file change the value for PasswordAuthentication with:
@@ -43,9 +58,9 @@ sudo ufw status
 22. pip install gunicorn pymysql
 23. echo "export FLASK_APP=my_things_server.py" >> ~/my-things-server/venv/bin/activate
 23a. echo "export FLASK_ENV=production" >> ~/my-things-server/venv/bin/activate
-24. . ~/.profile
+24. NO     . ~/.profile
 25. . venv/bin/activate
-26. mysql -u root -p
+26. sudo mysql -u root -p
 27. set up the database
 create database my_things character set utf8 collate utf8_bin;
 create user 'grovesr'@'localhost' identified by 'SOME_PASSWORD_HERE';
@@ -57,6 +72,9 @@ flush privileges;
 quit;
 28. copy the .secrets.json file into the deployment/vagrant directory
 29. sudo mv /vagrant/.secrets.json mts_app
+29b. if you want to restore the my_things database from a backup first:
+mysql -u grovesr -p < backup_xxxxxx.sql
+  add "USE my_things;""   at the top of the above backup file first!!
 30. flask db upgrade
 31. sudo cp deployment/supervisor/conf.d/my-things-server.conf  /etc/supervisor/conf.d/
 32. sudo supervisorctl reload
@@ -72,3 +90,7 @@ make sure to cd /home/ubuntu (ubuntu is the sudo user)
  4a. This is a combined nginx conf file that handles routing my-things-server and my-things-client through port 443
  5. sudo service nginx reload
  6. sudo ln -fs /home/ubuntu/my-things-client/static ./my-things-client
+
+Deploy on raspberry-pi:
+1) follow instructions to install mariadb 10.2 or later to handle JSON database data type:
+http://www.pgeorgiev.com/compiling-and-installing-mariadb-on-raspberry-pi/
