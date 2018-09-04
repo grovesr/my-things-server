@@ -25,7 +25,7 @@ class Node(db.Model):
     name =          db.Column(db.String(128), unique=False, nullable=False)
     type =          db.Column(db.String(16),  unique=False, nullable=True)
     description =   db.Column(db.Text,        unique=False, nullable=True)
-    nodeInfo =      db.Column(JSON,           unique=False, nullable=True)
+    nodeInfo =      db.Column(db.Text,           unique=False, nullable=True)
     haveTried =     db.Column(db.Boolean,     unique=False, nullable=True, default=False)
     dateTried =     db.Column(db.Date,        unique=False, nullable=True)
     review =        db.Column(db.Text,        unique=False, nullable=True)
@@ -68,8 +68,8 @@ class Node(db.Model):
     
     @validates('nodeInfo')
     def validate_nodeInfo(self, key, nodeInfo):
-        if not isinstance(nodeInfo, dict):
-            raise AssertionError('Provided nodeInfo is not a json serializable dictionary')    
+        if not isinstance(nodeInfo, str):
+            raise AssertionError('Provided nodeInfo is not a json serializable string')    
         return nodeInfo
     
     @validates('haveTried')
