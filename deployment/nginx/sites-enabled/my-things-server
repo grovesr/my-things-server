@@ -40,6 +40,7 @@ server {
 
     location /my-things-client/ {
         alias /var/www/html/my-things-client/;
+        index index.html
     }
 
 }
