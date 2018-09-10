@@ -5,16 +5,14 @@ Created on Jun 20, 2018
 '''
 import re
 import json
+from json.decoder import JSONDecodeError
 from flask.helpers import url_for
 #from mts_app import db
 from sqlalchemy.orm import backref
 from sqlalchemy.orm import validates
 from sqlalchemy import UniqueConstraint
-from sqlalchemy.dialects.mysql import JSON
 from werkzeug.security import generate_password_hash, check_password_hash
-from sqlalchemy.sql.functions import coalesce
 from flask_sqlalchemy import SQLAlchemy
-from dateutil.parser import parse
 import datetime
 
 db = SQLAlchemy()
@@ -25,7 +23,7 @@ class Node(db.Model):
     name =          db.Column(db.String(128), unique=False, nullable=False)
     type =          db.Column(db.String(16),  unique=False, nullable=True)
     description =   db.Column(db.Text,        unique=False, nullable=True)
-    nodeInfo =      db.Column(db.Text,           unique=False, nullable=True)
+    nodeInfo =      db.Column(db.Text,        unique=False, nullable=True)
     haveTried =     db.Column(db.Boolean,     unique=False, nullable=True, default=False)
     dateTried =     db.Column(db.Date,        unique=False, nullable=True)
     review =        db.Column(db.Text,        unique=False, nullable=True)
@@ -68,9 +66,20 @@ class Node(db.Model):
     
     @validates('nodeInfo')
     def validate_nodeInfo(self, key, nodeInfo):
-        if not isinstance(nodeInfo, str):
-            raise AssertionError('Provided nodeInfo is not a json serializable string')    
-        return nodeInfo
+        if isinstance(nodeInfo, str):
+            try:
+                json.loads(nodeInfo)
+            except JSONDecodeError:
+                raise AssertionError('Provided nodeInfo is not json serializable')
+            parsedNodeInfo = nodeInfo
+        elif isinstance(nodeInfo, dict):
+            try:
+                parsedNodeInfo = json.dumps(nodeInfo)
+            except:
+                raise AssertionError('Provided nodeInfo is not json serializable')
+        else:
+            raise AssertionError('Provided nodeInfo is not json serializable')    
+        return parsedNodeInfo
     
     @validates('haveTried')
     def validate_have_tried(self, key, haveTried):
@@ -177,11 +186,15 @@ class Node(db.Model):
             parent = self.parent.name
         else:
             parent = None
+        if self.nodeInfo is None:
+            parsedNodeInfo = None
+        else:
+            parsedNodeInfo = json.loads(self.nodeInfo)
         return {'name': self.name,
                 'id': self.id, 
                 'type': self.type,
                 'description': self.description, 
-                'nodeInfo': self.nodeInfo,
+                'nodeInfo': parsedNodeInfo,
                 'haveTried':self.haveTried, 
                 'dateTried':dateTried,
                 'rating':self.rating,

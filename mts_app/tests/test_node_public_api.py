@@ -253,7 +253,7 @@ class NodeApiTests(MyThingsTest):
             'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
         }
         data={'name':'MainNode1', 'owner': self.editUser.username, 'type':'Type', 'description':'Description',
-              'nodeInfo':json.dumps({'node':'info'}), 'haveTried':True, 'review':'Review',
+              'nodeInfo':{'node':'info'}, 'haveTried':True, 'review':'Review',
               'rating':5, 'dateTried':'06/11/2018', 'dateReviewed':'06/11/2018'} 
         response = self.client.post('/add/node',
                                  data=json.dumps(data),
@@ -267,7 +267,7 @@ class NodeApiTests(MyThingsTest):
         self.assertIn('description', response.json)
         self.assertEqual('Description', response.json['description'])
         self.assertIn('nodeInfo', response.json)
-        self.assertEqual({"node":"info"}, json.loads(response.json['nodeInfo']))
+        self.assertEqual({'node':'info'}, response.json['nodeInfo'])
         self.assertIn('haveTried', response.json)
         self.assertEqual(True, response.json['haveTried'])
         self.assertIn('dateTried', response.json)
@@ -317,7 +317,7 @@ class NodeApiTests(MyThingsTest):
                                  headers=authHeaders)
         self.assertEqual(response.status_code, 201)
         data={'name':'MainNode1new', 'type':'newType', 'description':'newDescription',
-              'nodeInfo':json.dumps({'new':'info'}), 'haveTried':True, 'review':'newReview',
+              'nodeInfo':{'new':'info'}, 'haveTried':True, 'review':'newReview',
               'rating':5, 'dateTried':'06/11/2018', 'dateReviewed':'06/11/2018',
               'sortIndex':4, 'need':False} 
         response = self.client.put('/node/' + str(response.json['id']),
@@ -332,7 +332,7 @@ class NodeApiTests(MyThingsTest):
         self.assertIn('description', response.json)
         self.assertEqual('newDescription', response.json['description'])
         self.assertIn('nodeInfo', response.json)
-        self.assertEqual({"new":"info"}, json.loads(response.json['nodeInfo']))
+        self.assertEqual({'new':'info'}, response.json['nodeInfo'])
         self.assertIn('haveTried', response.json)
         self.assertEqual(True, response.json['haveTried'])
         self.assertIn('dateTried', response.json)
@@ -518,7 +518,7 @@ class NodeApiTests(MyThingsTest):
                                  headers=authHeaders)
         self.assertEqual(400, response.status_code)
         self.assertIn('error', response.json)
-        self.assertIn('Provided nodeInfo is not a json serializable dictionary', response.json['error'])
+        self.assertIn('Provided nodeInfo is not json serializable', response.json['error'])
         
     def test_update_node_non_boolean_haveTried(self):
         authHeaders = {

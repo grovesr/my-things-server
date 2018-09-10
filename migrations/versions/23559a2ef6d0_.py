@@ -1,16 +1,16 @@
 """empty message
 
-Revision ID: 0eaf02a0a38e
+Revision ID: 23559a2ef6d0
 Revises: 
-Create Date: 2018-07-02 20:43:20.217383
+Create Date: 2018-09-09 20:22:43.381708
 
 """
 from alembic import op
 import sqlalchemy as sa
-from sqlalchemy.dialects import mysql
+
 
 # revision identifiers, used by Alembic.
-revision = '0eaf02a0a38e'
+revision = '23559a2ef6d0'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -33,10 +33,14 @@ def upgrade():
     sa.Column('name', sa.String(length=128), nullable=False),
     sa.Column('type', sa.String(length=16), nullable=True),
     sa.Column('description', sa.Text(), nullable=True),
-    sa.Column('nodeInfo', mysql.JSON(), nullable=True),
+    sa.Column('nodeInfo', sa.Text(), nullable=True),
     sa.Column('haveTried', sa.Boolean(), nullable=True),
+    sa.Column('dateTried', sa.Date(), nullable=True),
     sa.Column('review', sa.Text(), nullable=True),
     sa.Column('rating', sa.Integer(), nullable=True),
+    sa.Column('dateReviewed', sa.Date(), nullable=True),
+    sa.Column('sortIndex', sa.Integer(), nullable=True),
+    sa.Column('need', sa.Boolean(), nullable=False),
     sa.Column('ownerId', sa.Integer(), nullable=False),
     sa.Column('parentId', sa.Integer(), nullable=True),
     sa.ForeignKeyConstraint(['ownerId'], ['user.id'], ),

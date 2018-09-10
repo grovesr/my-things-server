@@ -13,14 +13,14 @@ import os
 from mts_app import create_app, migrate
 from mts_app import models
 from mts_app.helpers import checkDatabasePrerequisites
-from sqlalchemy.exc import OperationalError
+from sqlalchemy.exc import OperationalError, ProgrammingError
 
 app=create_app(os.getenv('FLASK_ENV') or 'default')
 if not app.config['TESTING']:
     try:
         with app.app_context():
             checkDatabasePrerequisites()
-    except OperationalError:
+    except (OperationalError, ProgrammingError):
         # we assume that flask migrate/upgrade needs to e run first
         pass
 if __name__ == '__main__':
