@@ -136,8 +136,8 @@ class Node(db.Model):
                 numericRating = int(rating)
             except ValueError:
                 raise AssertionError('Provided rating must resolve to a number')
-            if (not isinstance(numericRating, int) or numericRating < 0 or numericRating > 5):
-                raise AssertionError('Provided rating must be a number between 0 and 5')  
+            if (not isinstance(numericRating, int) or numericRating < 0 or numericRating > 10):
+                raise AssertionError('Provided rating must be a number between 0 and 10')  
         else: 
             numericRating = None  
         return numericRating
