@@ -1015,7 +1015,7 @@ class NodeApiTests(MyThingsTest):
         self.assertIn('User doesn''t have edit permission', response.json['error'])
         
     def test_add_main_node_no_name(self):
-        data={'owner':self.editUser.username, 'parentId':'foo', 'type': 'books'}
+        data={'owner':self.editUser.username, 'type': 'books'}
         response = self.client.post('/add/node',
                                  data=json.dumps(data),
                                  content_type='application/json',
@@ -1025,7 +1025,7 @@ class NodeApiTests(MyThingsTest):
         self.assertIn('No name specified in add/node request', response.json['error'])
         
     def test_add_main_node_no_type(self):
-        data={'name':'MainNode1', 'owner':self.editUser.username, 'parentId':'foo'}
+        data={'name':'MainNode1', 'owner':self.editUser.username}
         response = self.client.post('/add/node',
                                  data=json.dumps(data),
                                  content_type='application/json',
@@ -1035,7 +1035,7 @@ class NodeApiTests(MyThingsTest):
         self.assertIn('No type specified in add/node request', response.json['error'])
         
     def test_add_main_node_no_owner(self):
-        data={'name':'MainNode1', 'parentId':'foo', 'type': 'books'}
+        data={'name':'MainNode1', 'type': 'books'}
         response = self.client.post('/add/node',
                                  data=json.dumps(data),
                                  content_type='application/json',
@@ -1043,6 +1043,22 @@ class NodeApiTests(MyThingsTest):
         self.assertEqual(400, response.status_code)  
         self.assertIn('error', response.json)
         self.assertIn('No owner specified in add/node request', response.json['error'])
+        
+    def test_add_main_node_null_dateTried(self):
+        data={'name':'MainNode1', 'owner':self.editUser.username, 'type': 'books', 'dateTried': None}
+        response = self.client.post('/add/node',
+                                 data=json.dumps(data),
+                                 content_type='application/json',
+                                 headers=authHeaders)
+        self.assertEqual(201, response.status_code)  
+    
+    def test_add_main_node_null_dateReviewed(self):
+        data={'name':'MainNode1', 'owner':self.editUser.username, 'type': 'books', 'dateReviewed': None}
+        response = self.client.post('/add/node',
+                                 data=json.dumps(data),
+                                 content_type='application/json',
+                                 headers=authHeaders)
+        self.assertEqual(201, response.status_code)  
         
     def test_get_main_nodes_edit_access(self):
         authHeaders = {

@@ -177,11 +177,19 @@ def addNode():
         if 'haveTried' in request.json:
             node.haveTried = request.json['haveTried']
         if 'dateTried' in request.json:
-            node.dateTried = parse(request.json['dateTried']).date()
+            if request.json['dateTried'] is not None and request.json['dateTried'] is not '' :
+                try:
+                    node.dateTried = parse(request.json['dateTried'])
+                except ValueError:
+                    raise BadRequest('Provided dateTried is not a valid date format')
         if 'review' in request.json:
             node.review = request.json['review']
         if 'dateReviewed' in request.json:
-            node.dateReviewed = parse(request.json['dateReviewed']).date()
+            if request.json['dateReviewed'] is not None and request.json['dateReviewed'] is not '':
+                try:
+                    node.dateReviewed = parse(request.json['dateReviewed'])
+                except ValueError:
+                    raise BadRequest('Provided dateReviewed is not a valid date format')
         if 'rating' in request.json:
             node.rating = request.json['rating']
         if 'sortIndex' in request.json:
@@ -223,7 +231,7 @@ def updateNode(nodeId):
                 except ValueError:
                     raise BadRequest('Provided dateTried is not a valid date format')
             else:
-               node.dateTried = request.json['dateTried']    
+                node.dateTried = request.json['dateTried']    
         if 'review' in request.json:
             node.review = request.json['review']
         if 'dateReviewed' in request.json:
@@ -233,7 +241,7 @@ def updateNode(nodeId):
                 except ValueError:
                     raise BadRequest('Provided dateReviewed is not a valid date format')
             else:
-               node.dateReviewed = request.json['dateReviewed']    
+                node.dateReviewed = request.json['dateReviewed']    
         if 'rating' in request.json:
             node.rating = request.json['rating']
         if 'sortIndex' in request.json:
