@@ -1139,7 +1139,7 @@ class NodeApiTests(MyThingsTest):
         self.assertEqual(200, response.status_code)
         self.assertIn('nodeCount', response.json)
         self.assertEqual(15, response.json['nodeCount'])
-        response = self.client.get('/main/nodes/info/3?ownerId='+str(user.id), headers=authHeaders)
+        response = self.client.get('/main/nodes/info3?ownerId='+str(user.id), headers=authHeaders)
         self.assertEqual(200, response.status_code)
         self.assertIn('nodeCount', response.json)
         self.assertEqual(3, response.json['nodeCount'])
