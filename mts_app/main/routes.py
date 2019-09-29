@@ -92,7 +92,7 @@ def getMainNodes():
         nodesJson['nodes'].append(node.buildPublicJson())
     return jsonify(nodesJson)
 
-@main_bp.route('/main/nodes/info/3', methods=['GET'])
+@main_bp.route('/main/nodes/info3', methods=['GET'])
 @auth.login_required
 def getMainNodesWithInfo3():
     validateUser()
