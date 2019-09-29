@@ -167,13 +167,13 @@ def getMainNodesWithInfo3():
         nodes.append(rootNode)
         db.session.commit()
         nodesJson = {'nodes':[]}
-        nodesJon['nodeCount'] = len(nodes)
+        nodeJson['nodeCount'] = len(nodes)
         for node in nodes:
             node.childCount = len(node.children);
             nodesJson['nodes'].append(node.buildPublicJson())
         return jsonify(nodesJson)
     except Exception as e:
-        raise InternalServerError
+        raise InternalServerError(e.args)
 
 @main_bp.route('/nodes', methods=['GET'])
 @auth.login_required
