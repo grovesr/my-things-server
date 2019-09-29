@@ -5,6 +5,7 @@ Created on Jun 20, 2018
 '''
 
 #from mts_app import app, db, auth
+import json
 from mts_app.models import db
 from mts_app.main import bp as main_bp
 from mts_app.admin.routes import validateAdmin, validateEditor, validateUser
@@ -21,6 +22,10 @@ from flask import make_response
 from werkzeug.exceptions import BadRequest, HTTPException
 from werkzeug.security import check_password_hash
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.sql.expression import literal
+from sqlalchemy.sql.expression import select
+from sqlalchemy.sql import func
+from sqlalchemy import and_
 from dateutil.parser import parse
 from sqlalchemy.orm import aliased
 
@@ -80,6 +85,85 @@ def getMainNodes():
     filterBy['parentId'] = rootNode.id
     nodes = Node.query.filter_by(**filterBy).order_by(orderField).all()
     nodes.append(rootNode)
+    nodesJson = {'nodes':[]}
+    nodesJson['nodeCount'] = len(nodes)
+    for node in nodes:
+        node.childCount = len(node.children);
+        nodesJson['nodes'].append(node.buildPublicJson())
+    return jsonify(nodesJson)
+
+@main_bp.route('/main/nodes/info/3', methods=['GET'])
+@auth.login_required
+def getMainNodesWithInfo3():
+    validateUser()
+    filterBy = {}
+    for key,value in iter(request.args.to_dict().items()):
+        if key in Node.validSearchFields() and key != 'orderField' and key != 'orderDir':
+            filterBy[key] = value
+    orderField = request.args.get('orderField', 'name')
+    orderDir = request.args.get('orderDir', 'desc')
+    if orderField and orderField not in Node.validOrderByFields():
+        raise BadRequest('orderField is not valid. Valid fields = ' + str(Node.validOrderByFields()))
+    if orderDir.lower() not in ['asc', 'desc']:
+        raise BadRequest('orderBy can only be "asc" or "desc"')
+    if filterBy.get('ownerId', None):
+        ownerQuery = User.query.filter_by(id= filterBy['ownerId'])
+        if ownerQuery.count() == 0:
+            raise NotFound('Invalid ownername specified in main/nodes request, so no nodes could be found')
+        owner = ownerQuery.first()
+    rootNode = Node.query.filter_by(parent=None).first()
+    
+    # get all nodes with the given filter
+    all1 = db.session.query(Node)\
+                  .filter_by(**filterBy)\
+                  .subquery()
+    filterBy['parentId'] = rootNode.id
+    # get all sub nodes of main nodes under root node               
+    sub1 = db.session.query(Node)\
+                  .filter(Node.parentId.in_(db.session.query(Node.id)\
+                  .filter_by(**filterBy)))\
+                  .subquery()
+    # accumulate all leaf item info and add to each sub item
+    sub2 = db.session.query(sub1)\
+                  .join(all1, sub1.c.id==all1.c.parentId)\
+                  .distinct()\
+                  .add_columns(select([func.avg(Node.rating)]).where(Node.parentId==sub1.c.id).label('averageRating'),
+                               select([func.count()]).where(and_(Node.parentId==sub1.c.id, Node.need==True)).label('needChildren'),
+                               select([func.count()]).where(and_(Node.parentId==sub1.c.id, Node.haveTried==True)).label('haveTriedChildren'),
+                               select([func.count()]).where(Node.parentId==sub1.c.id).label('numberChildren'))\
+                   .subquery()
+    # get all main nodes
+    main1 = db.session.query(Node)\
+                   .filter_by(**filterBy)\
+                   .subquery()
+
+    asub2  = aliased(sub2)
+    # inner join sub nodes to main nodes on sub.parentId=main.id
+    rows = db.session.query(main1)\
+                  .join(sub2, main1.c.id==sub2.c.parentId)\
+                  .add_columns(select([func.round(func.avg(asub2.c.averageRating))]).where(asub2.c.parentId==main1.c.id).label('averageLeafRating'),
+                               select([func.sum(asub2.c.needChildren)]).where(asub2.c.parentId==main1.c.id).label('needLeaves'),
+                               select([func.sum(asub2.c.haveTriedChildren)]).where(asub2.c.parentId==main1.c.id).label('haveTriedLeaves'),
+                               select([func.sum(asub2.c.numberChildren)]).where(asub2.c.parentId==main1.c.id).label('numberLeaves'),
+                               select([func.count()]).where(asub2.c.parentId==main1.c.id).label('numberSubs'))\
+                   .distinct()\
+                   .all()
+    nodes = []
+    for row in rows:
+        rowDict = row._asdict()
+        node = Node.query.filter(Node.id==rowDict['id']).first()
+        if node.nodeInfo is None:
+            node.nodeInfo = {}
+        nodeInfo = json.loads(node.nodeInfo)
+        nodeInfo['averageLeafRating'] = int(rowDict.pop('averageLeafRating'))
+        nodeInfo['needLeaves'] = int(rowDict.pop('needLeaves'))
+        nodeInfo['haveTriedLeaves'] = int(rowDict.pop('haveTriedLeaves'))
+        nodeInfo['numberLeaves'] = int(rowDict.pop('numberLeaves'))
+        nodeInfo['numberSubs'] = int(rowDict.pop('numberSubs'))
+        node.nodeInfo = nodeInfo
+        nodes.append(node)
+    nodes.append(rootNode)
+    db.session.commit()
     nodesJson = {'nodes':[]}
     nodesJson['nodeCount'] = len(nodes)
     for node in nodes:

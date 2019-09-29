@@ -1114,6 +1114,91 @@ class NodeApiTests(MyThingsTest):
             self.assertEqual(url_for('main.getNodeFromId',nodeId=mainNodeJson2['id'],
                                      _external=True), mainNodeJson2['uri'])
             
+    def test_get_main_nodes_with_info_3_edit_access(self):
+        authHeaders = {
+            'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
+        }
+        user = self.editUser
+        mainNodes = create_two_main_nodes_for_owner(user, parent=self.rootNode)
+        leafRating = 0
+        need = False
+        haveTried = False
+        for mainNode in mainNodes:
+            need = not(need)
+            haveTried = not(haveTried)
+            subNodes = create_two_sub_nodes_for_parent_node(mainNode)
+            for subNode in subNodes:
+                for leaf in create_two_sub_nodes_for_parent_node(subNode):
+                    leafRating += 1
+                    leaf.rating = leafRating
+                    leaf.need = need
+                    leaf.haveTried = haveTried
+        # we now have a three level hierarchy we can test against
+        response = self.client.get('/nodes', headers=authHeaders, 
+                                   content_type='application/json')
+        self.assertEqual(200, response.status_code)
+        self.assertIn('nodeCount', response.json)
+        self.assertEqual(15, response.json['nodeCount'])
+        response = self.client.get('/main/nodes/info/3?ownerId='+str(user.id), headers=authHeaders)
+        self.assertEqual(200, response.status_code)
+        self.assertIn('nodeCount', response.json)
+        self.assertEqual(3, response.json['nodeCount'])
+        self.assertIn('nodes', response.json)
+        mainNodeJson1 = [nodeJson for nodeJson in response.json['nodes'] if nodeJson['name'] == 'node:Main Node, owner:Edit_1'][0]
+        mainNodeJson2 = [nodeJson for nodeJson in response.json['nodes'] if nodeJson['name'] == 'node:Main Node, owner:Edit_2'][0]
+        self.assertIn('name', mainNodeJson1)
+        self.assertEqual('node:Main Node, owner:Edit_1', mainNodeJson1['name'])
+        self.assertIn('ownerName', mainNodeJson1)
+        self.assertEqual(self.editUser.username, mainNodeJson1['ownerName'])
+        self.assertIn('ownerId', mainNodeJson1)
+        self.assertEqual(self.editUser.id, mainNodeJson1['ownerId'])
+        self.assertIn('parentName', mainNodeJson1)
+        self.assertEqual(self.rootNode.name, mainNodeJson1['parentName'])
+        self.assertIn('parentId', mainNodeJson1)
+        self.assertEqual(self.rootNode.id, mainNodeJson1['parentId'])
+        self.assertIn('uri',mainNodeJson1)
+        self.assertIn('uri',mainNodeJson1)
+        with current_app.app_context():
+            self.assertEqual(url_for('main.getNodeFromId',nodeId=mainNodeJson1['id'], 
+                                     _external=True), mainNodeJson1['uri'])
+        self.assertIn('nodeInfo', mainNodeJson1)
+        self.assertIn('numberSubs', mainNodeJson1['nodeInfo'])
+        self.assertEqual(2, mainNodeJson1['nodeInfo']['numberSubs'])
+        self.assertIn('averageLeafRating', mainNodeJson1['nodeInfo'])
+        self.assertEqual(3, mainNodeJson1['nodeInfo']['averageLeafRating'])
+        self.assertIn('needLeaves', mainNodeJson1['nodeInfo'])
+        self.assertEqual(4, mainNodeJson1['nodeInfo']['needLeaves'])
+        self.assertIn('numberLeaves', mainNodeJson1['nodeInfo'])
+        self.assertEqual(4, mainNodeJson1['nodeInfo']['numberLeaves'])
+        self.assertIn('haveTriedLeaves', mainNodeJson1['nodeInfo'])
+        self.assertEqual(4, mainNodeJson1['nodeInfo']['haveTriedLeaves'])
+        self.assertIn('name', mainNodeJson2)
+        self.assertEqual('node:Main Node, owner:Edit_2', mainNodeJson2['name'])
+        self.assertIn('ownerName', mainNodeJson2)
+        self.assertEqual(self.editUser.username, mainNodeJson2['ownerName'])
+        self.assertIn('ownerId', mainNodeJson2)
+        self.assertEqual(self.editUser.id, mainNodeJson2['ownerId'])
+        self.assertIn('parentName', mainNodeJson2)
+        self.assertEqual(self.rootNode.name, mainNodeJson2['parentName'])
+        self.assertIn('parentId', mainNodeJson2)
+        self.assertEqual(self.rootNode.id, mainNodeJson2['parentId'])
+        self.assertIn('uri',mainNodeJson2)
+        self.assertIn('uri',mainNodeJson2)
+        with current_app.app_context():
+            self.assertEqual(url_for('main.getNodeFromId',nodeId=mainNodeJson2['id'],
+                                     _external=True), mainNodeJson2['uri'])
+        self.assertIn('nodeInfo', mainNodeJson2)
+        self.assertIn('numberSubs', mainNodeJson2['nodeInfo'])
+        self.assertEqual(2, mainNodeJson2['nodeInfo']['numberSubs'])
+        self.assertIn('averageLeafRating', mainNodeJson2['nodeInfo'])
+        self.assertEqual(7, mainNodeJson2['nodeInfo']['averageLeafRating'])
+        self.assertIn('needLeaves', mainNodeJson2['nodeInfo'])
+        self.assertEqual(0, mainNodeJson2['nodeInfo']['needLeaves'])
+        self.assertIn('numberLeaves', mainNodeJson2['nodeInfo'])
+        self.assertEqual(4, mainNodeJson2['nodeInfo']['numberLeaves'])
+        self.assertIn('haveTriedLeaves', mainNodeJson2['nodeInfo'])
+        self.assertEqual(0, mainNodeJson2['nodeInfo']['haveTriedLeaves'])
+            
     def test_get_main_nodes_read_access(self):
         authHeaders = {
             'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
