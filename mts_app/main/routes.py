@@ -93,7 +93,7 @@ def getMainNodes():
         nodesJson['nodes'].append(node.buildPublicJson())
     return jsonify(nodesJson)
 
-@main_bp.route('/main/nodes/info/3', methods=['GET'])
+@main_bp.route('/main/nodes/info/depth/3', methods=['GET'])
 @auth.login_required
 def getMainNodesWithInfo3():
     validateUser()
@@ -168,6 +168,31 @@ def getMainNodesWithInfo3():
         nodes.append(node)
     nodes.append(rootNode)
     db.session.commit()
+    nodesJson = {'nodes':[]}
+    nodesJson['nodeCount'] = len(nodes)
+    for node in nodes:
+        node.childCount = len(node.children);
+        nodesJson['nodes'].append(node.buildPublicJson())
+    return jsonify(nodesJson)
+
+@main_bp.route('/tree/depth/3', methods=['GET'])
+@auth.login_required
+def getTree3WithNode():
+    validateUser()
+    id = request.args.get('id', None)
+    if id is None:
+        raise BadRequest('Request must include the id of a Node')
+    rootNode = Node.query.filter_by(parent=None).first()
+    node = Node.query.filter_by(id = id).first()
+    mainNode = node
+    while mainNode.parent is not rootNode:
+        mainNode = mainNode.parent
+    nodes = [mainNode]
+    # find all descendants of mainNode and add them to nodes
+    for mn in mainNode.children:
+        nodes.append(mn)
+        for cn in mn.children:
+            nodes.append(cn)
     nodesJson = {'nodes':[]}
     nodesJson['nodeCount'] = len(nodes)
     for node in nodes:
