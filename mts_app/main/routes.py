@@ -163,11 +163,11 @@ def getMainNodesWithInfo3():
         try:
             nodeInfo['needLeaves'] = int(rowDict.pop('needLeaves'))
         except TypeError:
-            nodeInfo['needLeaves'] = None
+            nodeInfo['needLeaves'] = 0
         try:
             nodeInfo['haveTriedLeaves'] = int(rowDict.pop('haveTriedLeaves'))
         except TypeError:
-            nodeInfo['haveTriedLeaves'] = None
+            nodeInfo['haveTriedLeaves'] = 0
         try:
             nodeInfo['numberLeaves'] = int(rowDict.pop('numberLeaves'))
         except TypeError:

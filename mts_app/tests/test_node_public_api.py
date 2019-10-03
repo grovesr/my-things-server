@@ -1240,11 +1240,11 @@ class NodeApiTests(MyThingsTest):
         self.assertIn('averageLeafRating', mainNodeJson1['nodeInfo'])
         self.assertEqual(None, mainNodeJson1['nodeInfo']['averageLeafRating'])
         self.assertIn('needLeaves', mainNodeJson1['nodeInfo'])
-        self.assertEqual(None, mainNodeJson1['nodeInfo']['needLeaves'])
+        self.assertEqual(0, mainNodeJson1['nodeInfo']['needLeaves'])
         self.assertIn('numberLeaves', mainNodeJson1['nodeInfo'])
         self.assertEqual(0, mainNodeJson1['nodeInfo']['numberLeaves'])
         self.assertIn('haveTriedLeaves', mainNodeJson1['nodeInfo'])
-        self.assertEqual(None, mainNodeJson1['nodeInfo']['haveTriedLeaves'])
+        self.assertEqual(0, mainNodeJson1['nodeInfo']['haveTriedLeaves'])
         
     def test_get_full_tree3_from_main_node(self):
         authHeaders = {
