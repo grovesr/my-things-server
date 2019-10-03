@@ -187,15 +187,14 @@ def getMainNodesWithInfo3():
         nodesJson['nodes'].append(node.buildPublicJson())
     return jsonify(nodesJson)
 
-@main_bp.route('/tree/depth/3', methods=['GET'])
+@main_bp.route('/tree/depth/3/<string:nodeId>', methods=['GET'])
 @auth.login_required
-def getTree3WithNode():
+def getTree3WithNode(nodeId=None):
     validateUser()
-    id = request.args.get('id', None)
     if id is None:
         raise BadRequest('Request must include the id of a Node')
     rootNode = Node.query.filter_by(parent=None).first()
-    node = Node.query.filter_by(id = id).first()
+    node = Node.query.filter_by(id = nodeId).first()
     mainNode = node
     while mainNode.parent is not rootNode:
         mainNode = mainNode.parent
