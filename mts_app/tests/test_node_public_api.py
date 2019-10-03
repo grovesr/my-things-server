@@ -1214,6 +1214,37 @@ class NodeApiTests(MyThingsTest):
         self.assertEqual(4, mainNodeJson2['nodeInfo']['numberLeaves'])
         self.assertIn('haveTriedLeaves', mainNodeJson2['nodeInfo'])
         self.assertEqual(0, mainNodeJson2['nodeInfo']['haveTriedLeaves'])
+    
+    def test_get_main_nodes_with_info_3_no_sub_info(self):
+        authHeaders = {
+            'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
+        }
+        user = self.editUser
+        mainNodes = create_two_main_nodes_for_owner(user, parent=self.rootNode)
+        # we now have a three level hierarchy we can test against
+        response = self.client.get('/nodes', headers=authHeaders, 
+                                   content_type='application/json')
+        self.assertEqual(200, response.status_code)
+        self.assertIn('nodeCount', response.json)
+        self.assertEqual(3, response.json['nodeCount'])
+        response = self.client.get('/main/nodes/info/depth/3?ownerId='+str(user.id), headers=authHeaders)
+        self.assertEqual(200, response.status_code)
+        self.assertIn('nodeCount', response.json)
+        self.assertEqual(3, response.json['nodeCount'])
+        self.assertIn('nodes', response.json)
+        mainNodeJson1 = [nodeJson for nodeJson in response.json['nodes'] if nodeJson['name'] == 'node:Main Node, owner:Edit_1'][0]
+        mainNodeJson2 = [nodeJson for nodeJson in response.json['nodes'] if nodeJson['name'] == 'node:Main Node, owner:Edit_2'][0]
+        self.assertIn('nodeInfo', mainNodeJson1)
+        self.assertIn('numberSubs', mainNodeJson1['nodeInfo'])
+        self.assertEqual(0, mainNodeJson1['nodeInfo']['numberSubs'])
+        self.assertIn('averageLeafRating', mainNodeJson1['nodeInfo'])
+        self.assertEqual(None, mainNodeJson1['nodeInfo']['averageLeafRating'])
+        self.assertIn('needLeaves', mainNodeJson1['nodeInfo'])
+        self.assertEqual(None, mainNodeJson1['nodeInfo']['needLeaves'])
+        self.assertIn('numberLeaves', mainNodeJson1['nodeInfo'])
+        self.assertEqual(0, mainNodeJson1['nodeInfo']['numberLeaves'])
+        self.assertIn('haveTriedLeaves', mainNodeJson1['nodeInfo'])
+        self.assertEqual(None, mainNodeJson1['nodeInfo']['haveTriedLeaves'])
         
     def test_get_full_tree3_from_main_node(self):
         authHeaders = {

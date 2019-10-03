@@ -141,7 +141,7 @@ def getMainNodesWithInfo3():
     asub2  = aliased(sub2)
     # inner join sub nodes to main nodes on sub.parentId=main.id
     rows = db.session.query(main1)\
-                  .join(sub2, main1.c.id==sub2.c.parentId)\
+                  .outerjoin(sub2, main1.c.id==sub2.c.parentId)\
                   .add_columns(select([func.round(func.avg(asub2.c.averageRating))]).where(asub2.c.parentId==main1.c.id).label('averageLeafRating'),
                                select([func.sum(asub2.c.needChildren)]).where(asub2.c.parentId==main1.c.id).label('needLeaves'),
                                select([func.sum(asub2.c.haveTriedChildren)]).where(asub2.c.parentId==main1.c.id).label('haveTriedLeaves'),
@@ -160,10 +160,22 @@ def getMainNodesWithInfo3():
             nodeInfo['averageLeafRating'] = int(rowDict.pop('averageLeafRating'))
         except TypeError:
             nodeInfo['averageLeafRating'] = None
-        nodeInfo['needLeaves'] = int(rowDict.pop('needLeaves'))
-        nodeInfo['haveTriedLeaves'] = int(rowDict.pop('haveTriedLeaves'))
-        nodeInfo['numberLeaves'] = int(rowDict.pop('numberLeaves'))
-        nodeInfo['numberSubs'] = int(rowDict.pop('numberSubs'))
+        try:
+            nodeInfo['needLeaves'] = int(rowDict.pop('needLeaves'))
+        except TypeError:
+            nodeInfo['needLeaves'] = None
+        try:
+            nodeInfo['haveTriedLeaves'] = int(rowDict.pop('haveTriedLeaves'))
+        except TypeError:
+            nodeInfo['haveTriedLeaves'] = None
+        try:
+            nodeInfo['numberLeaves'] = int(rowDict.pop('numberLeaves'))
+        except TypeError:
+            nodeInfo['numberLeaves'] = 0
+        try:
+            nodeInfo['numberSubs'] = int(rowDict.pop('numberSubs'))
+        except TypeError:
+            nodeInfo['numberSubs'] = 0
         node.nodeInfo = nodeInfo
         nodes.append(node)
     nodes.append(rootNode)
