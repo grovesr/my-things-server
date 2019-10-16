@@ -152,20 +152,23 @@ class Node(db.Model):
         return need
     
     @classmethod
-    def validSearchFields(self):
+    def validExactSearchFields(self):
         return ['id',
-                'name',
                 'type',
-                'description',
                 'haveTried',
-                'dateTried',
-                'review',
+                'dateTried'
                 'dateReviewed',
                 'rating',
                 'ownerId',
                 'parentId',
                 'sortIndex',
                 'need']
+        
+    @classmethod
+    def validLikeSearchFields(self):
+        return ['name',
+                'description',
+                'review']
     
     @classmethod
     def validOrderByFields(self):

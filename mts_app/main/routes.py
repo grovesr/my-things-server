@@ -68,23 +68,34 @@ def unauthorized():
 @auth.login_required
 def getMainNodes():
     validateUser()
-    filterBy = {}
+    exactFilterBy = {}
+    likeFilterBy = {}
     for key,value in iter(request.args.to_dict().items()):
-        if key in Node.validSearchFields() and key != 'orderField' and key != 'orderDir':
-            filterBy[key] = value
+        if key in Node.validExactSearchFields():
+            exactFilterBy[key] = value
+        if key in Node.validLikeSearchFields():
+            likeFilterBy[key] = value
     orderField = request.args.get('orderField', 'name')
     orderDir = request.args.get('orderDir', 'desc')
     if orderField and orderField not in Node.validOrderByFields():
         raise BadRequest('orderField is not valid. Valid fields = ' + str(Node.validOrderByFields()))
     if orderDir.lower() not in ['asc', 'desc']:
         raise BadRequest('orderBy can only be "asc" or "desc"')
-    if filterBy.get('ownerId', None):
-        ownerQuery = User.query.filter_by(id= filterBy['ownerId'])
+    if exactFilterBy.get('ownerId', None):
+        ownerQuery = User.query.filter_by(id= exactFilterBy['ownerId'])
         if ownerQuery.count() == 0:
             raise NotFound('Invalid ownername specified in main/nodes request, so no nodes could be found')
     rootNode = Node.query.filter_by(parent=None).first()
-    filterBy['parentId'] = rootNode.id
-    nodes = Node.query.filter_by(**filterBy).order_by(orderField).all()
+    exactFilterBy['parentId'] = rootNode.id
+    nodes = Node.query.filter(Node.parent != None).filter_by(**exactFilterBy)
+    for likeKey, likeValue in likeFilterBy:
+        if likeKey == 'name':
+            nodes = nodes.filter(Node.name.ilike('%' + likeValue + '%'))
+        if likeKey == 'description':
+            nodes = nodes.filter(Node.description.ilike('%' + likeValue + '%'))
+        if likeKey == 'review':
+            nodes = nodes.filter(Node.review.ilike('%' + likeValue + '%'))
+    nodes = nodes.order_by(orderField).all()
     nodes.append(rootNode)
     nodesJson = {'nodes':[]}
     nodesJson['nodeCount'] = len(nodes)
@@ -97,33 +108,50 @@ def getMainNodes():
 @auth.login_required
 def getMainNodesWithInfo3():
     validateUser()
-    filterBy = {}
+    exactFilterBy = {}
+    likeFilterBy = {}
     for key,value in iter(request.args.to_dict().items()):
-        if key in Node.validSearchFields() and key != 'orderField' and key != 'orderDir':
-            filterBy[key] = value
+        if key in Node.validExactSearchFields():
+            exactFilterBy[key] = value
+        if key in Node.validLikeSearchFields():
+            likeFilterBy[key] = value
     orderField = request.args.get('orderField', 'name')
     orderDir = request.args.get('orderDir', 'desc')
     if orderField and orderField not in Node.validOrderByFields():
         raise BadRequest('orderField is not valid. Valid fields = ' + str(Node.validOrderByFields()))
     if orderDir.lower() not in ['asc', 'desc']:
         raise BadRequest('orderBy can only be "asc" or "desc"')
-    if filterBy.get('ownerId', None):
-        ownerQuery = User.query.filter_by(id= filterBy['ownerId'])
+    if exactFilterBy.get('ownerId', None):
+        ownerQuery = User.query.filter_by(id= exactFilterBy['ownerId'])
         if ownerQuery.count() == 0:
-            raise NotFound('Invalid ownername specified in main/nodes request, so no nodes could be found')
+            raise NotFound('Invalid ownername specified in main/nodes/info/depth/3 request, so no nodes could be found')
         owner = ownerQuery.first()
     rootNode = Node.query.filter_by(parent=None).first()
     
     # get all nodes with the given filter
     all1 = db.session.query(Node)\
-                  .filter_by(**filterBy)\
-                  .subquery()
-    filterBy['parentId'] = rootNode.id
+                  .filter_by(**exactFilterBy)
+    for likeKey, likeValue in likeFilterBy:
+        if likeKey == 'name':
+            all1 = all1.filter(Node.name.ilike('%' + likeValue + '%'))
+        if likeKey == 'description':
+            all1 = all1.filter(Node.description.ilike('%' + likeValue + '%'))
+        if likeKey == 'review':
+            all1 = all1.filter(Node.review.ilike('%' + likeValue + '%'))
+    all1 = all1.subquery()
+    exactFilterBy['parentId'] = rootNode.id
     # get all sub nodes of main nodes under root node               
     sub1 = db.session.query(Node)\
                   .filter(Node.parentId.in_(db.session.query(Node.id)\
-                  .filter_by(**filterBy)))\
-                  .subquery()
+                  .filter_by(**exactFilterBy)))
+    for likeKey, likeValue in likeFilterBy:
+        if likeKey == 'name':
+            sub1 = all1.filter(Node.name.ilike('%' + likeValue + '%'))
+        if likeKey == 'description':
+            sub1 = all1.filter(Node.description.ilike('%' + likeValue + '%'))
+        if likeKey == 'review':
+            sub1 = all1.filter(Node.review.ilike('%' + likeValue + '%'))
+    sub1 = sub1.subquery()
     # accumulate all leaf item info and add to each sub item
     sub2 = db.session.query(sub1)\
                   .join(all1, sub1.c.id==all1.c.parentId)\
@@ -135,8 +163,15 @@ def getMainNodesWithInfo3():
                    .subquery()
     # get all main nodes
     main1 = db.session.query(Node)\
-                   .filter_by(**filterBy)\
-                   .subquery()
+                  .filter_by(**exactFilterBy)
+    for likeKey, likeValue in likeFilterBy:
+        if likeKey == 'name':
+            main1 = main1.filter(Node.name.ilike('%' + likeValue + '%'))
+        if likeKey == 'description':
+            main1 = main1.filter(Node.description.ilike('%' + likeValue + '%'))
+        if likeKey == 'review':
+            main1 = main1.filter(Node.review.ilike('%' + likeValue + '%'))
+    main1 = main1.subquery()
 
     asub2  = aliased(sub2)
     # inner join sub nodes to main nodes on sub.parentId=main.id
@@ -215,21 +250,32 @@ def getTree3WithNode(nodeId=None):
 @auth.login_required
 def getNodes():
     validateUser()
-    filterBy = {}
+    exactFilterBy = {}
+    likeFilterBy = {}
     for key,value in iter(request.args.to_dict().items()):
-        if key in Node.validSearchFields() and key != 'orderField' and key != 'orderDir':
-            filterBy[key] = value
+        if key in Node.validExactSearchFields():
+            exactFilterBy[key] = value
+        if key in Node.validLikeSearchFields():
+            likeFilterBy[key] = value
     orderField = request.args.get('orderField', 'name')
     orderDir = request.args.get('orderDir', 'desc')
     if orderField and orderField not in Node.validOrderByFields():
         raise BadRequest('orderField is not valid. Valid fields = ' + str(Node.validOrderByFields()))
     if orderDir.lower() not in ['asc', 'desc']:
         raise BadRequest('orderBy can only be "asc" or "desc"')
-    if filterBy.get('ownerId', None):
-        ownerQuery = User.query.filter_by(id= filterBy['ownerId'])
+    if exactFilterBy.get('ownerId', None):
+        ownerQuery = User.query.filter_by(id= exactFilterBy['ownerId'])
         if ownerQuery.count() == 0:
             raise NotFound('Invalid ownername specified in nodes request, so no nodes could be found')
-    nodes = Node.query.filter(Node.parent != None).filter_by(**filterBy).order_by(orderField).all()
+    nodes = Node.query.filter(Node.parent != None).filter_by(**exactFilterBy)
+    for likeKey, likeValue in likeFilterBy.items():
+        if likeKey == 'name':
+            nodes = nodes.filter(Node.name.ilike('%' + likeValue + '%'))
+        if likeKey == 'description':
+            nodes = nodes.filter(Node.description.ilike('%' + likeValue + '%'))
+        if likeKey == 'review':
+            nodes = nodes.filter(Node.review.ilike('%' + likeValue + '%'))
+    nodes = nodes.order_by(orderField).all()
     rootNode = Node.query.filter_by(parent=None).first()
     nodes.append(rootNode)
     nodesJson = {'nodes':[]}

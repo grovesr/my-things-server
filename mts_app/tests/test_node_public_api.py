@@ -1545,7 +1545,137 @@ class NodeApiTests(MyThingsTest):
         self.assertEqual(200, response.status_code)
         self.assertIn('nodeCount', response.json)
         self.assertEqual(1, response.json['nodeCount'])
+
+    def test_get_nodes_filter_name(self):
+        authHeaders = {
+            'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
+        }
+        data={'name':'MainNode1', 
+              'owner':self.editUser.username, 
+              'type': 'books'}
+        response = self.client.post('/add/node',
+                                 data=json.dumps(data),
+                                 content_type='application/json',
+                                 headers=authHeaders)
+        self.assertEqual(201, response.status_code)
+        data={'name':'MainNode2', 
+              'owner':self.editUser.username, 
+              'type': 'books'}
+        response = self.client.post('/add/node',
+                                 data=json.dumps(data),
+                                 content_type='application/json',
+                                 headers=authHeaders)
+        self.assertEqual(201, response.status_code) 
+        response = self.client.get('/nodes?name=1', headers=authHeaders)
+        self.assertEqual(200, response.status_code)
+        self.assertIn('nodeCount', response.json)
+        self.assertEqual(2, response.json['nodeCount'])
+        self.assertIn('nodes', response.json)
+        nodeResponse = response.json['nodes'][0]
+        self.assertIn('name', nodeResponse)
+        self.assertEqual('MainNode1', nodeResponse['name'])
+        self.assertIn('ownerName', nodeResponse)
+        self.assertEqual(self.editUser.username, nodeResponse['ownerName'])
+        self.assertIn('ownerId', nodeResponse)
+        self.assertEqual(self.editUser.id, nodeResponse['ownerId'])
+        self.assertIn('parentName',nodeResponse)
+        self.assertEqual(self.rootNode.name, nodeResponse['parentName'])
+        self.assertIn('parentId', nodeResponse)
+        self.assertEqual(self.rootNode.id, nodeResponse['parentId'])
+        self.assertIn('uri',nodeResponse)
+        self.assertIn('uri',nodeResponse)
+        with current_app.app_context():
+            self.assertEqual(url_for('main.getNodeFromId',nodeId=nodeResponse['id'], 
+                                     _external=True), nodeResponse['uri'])
         
+    def test_get_nodes_filter_description(self):
+        authHeaders = {
+            'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
+        }
+        data={'name':'MainNode1', 
+              'owner':self.editUser.username, 
+              'type': 'books',
+              'description': 'a first description'}
+        response = self.client.post('/add/node',
+                                 data=json.dumps(data),
+                                 content_type='application/json',
+                                 headers=authHeaders)
+        self.assertEqual(201, response.status_code)
+        data={'name':'MainNode2', 
+              'owner':self.editUser.username, 
+              'type': 'books',
+              'description': 'the second description'}
+        response = self.client.post('/add/node',
+                                 data=json.dumps(data),
+                                 content_type='application/json',
+                                 headers=authHeaders)
+        self.assertEqual(201, response.status_code) 
+        response = self.client.get('/nodes?description=a first', headers=authHeaders)
+        self.assertEqual(200, response.status_code)
+        self.assertIn('nodeCount', response.json)
+        self.assertEqual(2, response.json['nodeCount'])
+        self.assertIn('nodes', response.json)
+        nodeResponse = response.json['nodes'][0]
+        self.assertIn('name', nodeResponse)
+        self.assertEqual('MainNode1', nodeResponse['name'])
+        self.assertIn('ownerName', nodeResponse)
+        self.assertEqual(self.editUser.username, nodeResponse['ownerName'])
+        self.assertIn('ownerId', nodeResponse)
+        self.assertEqual(self.editUser.id, nodeResponse['ownerId'])
+        self.assertIn('parentName',nodeResponse)
+        self.assertEqual(self.rootNode.name, nodeResponse['parentName'])
+        self.assertIn('parentId', nodeResponse)
+        self.assertEqual(self.rootNode.id, nodeResponse['parentId'])
+        self.assertIn('uri',nodeResponse)
+        self.assertIn('uri',nodeResponse)
+        with current_app.app_context():
+            self.assertEqual(url_for('main.getNodeFromId',nodeId=nodeResponse['id'], 
+                                     _external=True), nodeResponse['uri'])
+    
+    def test_get_nodes_filter_review(self):
+        authHeaders = {
+            'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
+        }
+        data={'name':'MainNode1', 
+              'owner':self.editUser.username, 
+              'type': 'books',
+              'review': 'a first review'}
+        response = self.client.post('/add/node',
+                                 data=json.dumps(data),
+                                 content_type='application/json',
+                                 headers=authHeaders)
+        self.assertEqual(201, response.status_code)
+        data={'name':'MainNode2', 
+              'owner':self.editUser.username, 
+              'type': 'books',
+              'review': 'the second review'}
+        response = self.client.post('/add/node',
+                                 data=json.dumps(data),
+                                 content_type='application/json',
+                                 headers=authHeaders)
+        self.assertEqual(201, response.status_code) 
+        response = self.client.get('/nodes?review=a first', headers=authHeaders)
+        self.assertEqual(200, response.status_code)
+        self.assertIn('nodeCount', response.json)
+        self.assertEqual(2, response.json['nodeCount'])
+        self.assertIn('nodes', response.json)
+        nodeResponse = response.json['nodes'][0]
+        self.assertIn('name', nodeResponse)
+        self.assertEqual('MainNode1', nodeResponse['name'])
+        self.assertIn('ownerName', nodeResponse)
+        self.assertEqual(self.editUser.username, nodeResponse['ownerName'])
+        self.assertIn('ownerId', nodeResponse)
+        self.assertEqual(self.editUser.id, nodeResponse['ownerId'])
+        self.assertIn('parentName',nodeResponse)
+        self.assertEqual(self.rootNode.name, nodeResponse['parentName'])
+        self.assertIn('parentId', nodeResponse)
+        self.assertEqual(self.rootNode.id, nodeResponse['parentId'])
+        self.assertIn('uri',nodeResponse)
+        self.assertIn('uri',nodeResponse)
+        with current_app.app_context():
+            self.assertEqual(url_for('main.getNodeFromId',nodeId=nodeResponse['id'], 
+                                     _external=True), nodeResponse['uri'])
+    
     def test_get_nodes_filter_owner(self):
         authHeaders = {
             'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
