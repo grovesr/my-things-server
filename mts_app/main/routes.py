@@ -88,7 +88,7 @@ def getMainNodes():
     rootNode = Node.query.filter_by(parent=None).first()
     exactFilterBy['parentId'] = rootNode.id
     nodes = Node.query.filter(Node.parent != None).filter_by(**exactFilterBy)
-    for likeKey, likeValue in likeFilterBy:
+    for likeKey, likeValue in likeFilterBy.items():
         if likeKey == 'name':
             nodes = nodes.filter(Node.name.ilike('%' + likeValue + '%'))
         if likeKey == 'description':
@@ -131,7 +131,7 @@ def getMainNodesWithInfo3():
     # get all nodes with the given filter
     all1 = db.session.query(Node)\
                   .filter_by(**exactFilterBy)
-    for likeKey, likeValue in likeFilterBy:
+    for likeKey, likeValue in likeFilterBy.items():
         if likeKey == 'name':
             all1 = all1.filter(Node.name.ilike('%' + likeValue + '%'))
         if likeKey == 'description':
@@ -164,7 +164,7 @@ def getMainNodesWithInfo3():
     # get all main nodes
     main1 = db.session.query(Node)\
                   .filter_by(**exactFilterBy)
-    for likeKey, likeValue in likeFilterBy:
+    for likeKey, likeValue in likeFilterBy.items():
         if likeKey == 'name':
             main1 = main1.filter(Node.name.ilike('%' + likeValue + '%'))
         if likeKey == 'description':
