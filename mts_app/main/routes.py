@@ -172,16 +172,20 @@ def getMainNodesWithInfo3():
         if likeKey == 'review':
             main1 = main1.filter(Node.review.ilike('%' + likeValue + '%'))
     main1 = main1.subquery()
-
     asub2  = aliased(sub2)
-    # inner join sub nodes to main nodes on sub.parentId=main.id
-    rows = db.session.query(main1)\
-                  .outerjoin(sub2, main1.c.id==sub2.c.parentId)\
-                  .add_columns(select([func.round(func.avg(asub2.c.averageRating))]).where(asub2.c.parentId==main1.c.id).label('averageLeafRating'),
-                               select([func.sum(asub2.c.needChildren)]).where(asub2.c.parentId==main1.c.id).label('needLeaves'),
-                               select([func.sum(asub2.c.haveTriedChildren)]).where(asub2.c.parentId==main1.c.id).label('haveTriedLeaves'),
-                               select([func.sum(asub2.c.numberChildren)]).where(asub2.c.parentId==main1.c.id).label('numberLeaves'),
-                               select([func.count()]).where(asub2.c.parentId==main1.c.id).label('numberSubs'))\
+    asub1=aliased(sub1)
+    main1WithNumSubs = db.session.query(main1)\
+                  .outerjoin(sub1, main1.c.id==sub1.c.parentId)\
+                  .add_columns(select([func.count()]).where(asub1.c.parentId==main1.c.id).label('numberSubs'))\
+                  .distinct()\
+                  .subquery()
+    # outer join sub nodes to main nodes on sub.parentId=main.id
+    rows = db.session.query(main1WithNumSubs)\
+                  .outerjoin(sub2, main1WithNumSubs.c.id==sub2.c.parentId)\
+                  .add_columns(select([func.round(func.avg(asub2.c.averageRating))]).where(asub2.c.parentId==main1WithNumSubs.c.id).label('averageLeafRating'),
+                               select([func.sum(asub2.c.needChildren)]).where(asub2.c.parentId==main1WithNumSubs.c.id).label('needLeaves'),
+                               select([func.sum(asub2.c.haveTriedChildren)]).where(asub2.c.parentId==main1WithNumSubs.c.id).label('haveTriedLeaves'),
+                               select([func.sum(asub2.c.numberChildren)]).where(asub2.c.parentId==main1WithNumSubs.c.id).label('numberLeaves'))\
                    .distinct()\
                    .all()
     nodes = []
