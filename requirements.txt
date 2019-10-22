@@ -32,4 +32,4 @@ six==1.11.0
 SQLAlchemy==1.2.8
 tornado==5.0.2
 vine==1.1.4
-Werkzeug==0.14.1
+Werkzeug==0.15.3
