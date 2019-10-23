@@ -19,19 +19,19 @@ def create_three_users():
     user3 = create_user_with_index(userindex=3)
     return [user1, user2, user3]
 
-def create_node_for_owner_with_index(owner, nodeIndex=1, parent=None):
-    node = Node(name='node:Main Node, owner:' + owner.username + '_' + str(nodeIndex), owner=owner, parent=parent)
+def create_node_for_owner_with_index(owner, nodeIndex=1, parent=None, type='foo'):
+    node = Node(name='node:Main Node, owner:' + owner.username + '_' + str(nodeIndex), owner=owner, parent=parent, type=type)
     db.session.add(node)
     db.session.commit()
     return node
-    
-def create_two_main_nodes_for_owner(owner, parent=None):        
-    return [create_node_for_owner_with_index(owner=owner, parent=parent, nodeIndex=1), create_node_for_owner_with_index(owner, parent=parent, nodeIndex=2)]
+
+def create_two_main_nodes_for_owner(owner, parent=None, type='foo'):        
+    return [create_node_for_owner_with_index(owner=owner, parent=parent, nodeIndex=1, type=type), create_node_for_owner_with_index(owner, parent=parent, nodeIndex=2, type=type)]
 
 def create_two_sub_nodes_for_parent_node(parentNode):
     owner = parentNode.owner       
-    parentNode.children=[Node(name='node:Sub Node 1, parent:' + parentNode.name, parent=parentNode, owner=owner),
-                         Node(name='node:Sub Node 2, parent:' + parentNode.name, parent=parentNode, owner=owner)]
+    parentNode.children=[Node(name='node:Sub Node 1, parent:' + parentNode.name, parent=parentNode, owner=owner, type=parentNode.type),
+                         Node(name='node:Sub Node 2, parent:' + parentNode.name, parent=parentNode, owner=owner, type=parentNode.type)]
     db.session.add(parentNode)
     db.session.commit()
     return parentNode.children

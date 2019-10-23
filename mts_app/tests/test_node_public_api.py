@@ -1113,6 +1113,76 @@ class NodeApiTests(MyThingsTest):
         with current_app.app_context():
             self.assertEqual(url_for('main.getNodeFromId',nodeId=mainNodeJson2['id'],
                                      _external=True), mainNodeJson2['uri'])
+    
+    def test_get_depth_3_nodes_filter_description_edit_access(self):
+        authHeaders = {
+            'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
+        }
+        user = self.editUser
+        mainNodes = create_two_main_nodes_for_owner(user, parent=self.rootNode, type='books')
+        for mainNode in mainNodes:
+            for subNode in create_two_sub_nodes_for_parent_node(mainNode):
+                leaves = create_two_sub_nodes_for_parent_node(subNode)
+                leaves[0].description = 'This a first description'
+                db.session.add(leaves[0])
+                leaves[1].description = 'This is a second description'
+                db.session.add(leaves[1])
+                db.session.commit()
+        # we now have a three level hierarchy we can test against
+        response = self.client.get('/nodes', headers=authHeaders, 
+                                   content_type='application/json')
+        self.assertEqual(200, response.status_code)
+        self.assertIn('nodeCount', response.json)
+        self.assertEqual(15, response.json['nodeCount'])
+        response = self.client.get('/nodes/depth/3?ownerId='+str(user.id)+'&type=books&description=a first', headers=authHeaders)
+        self.assertEqual(200, response.status_code)
+        self.assertIn('nodeCount', response.json)
+        self.assertEqual(4, response.json['nodeCount'])
+    
+    def test_get_depth_3_nodes_filter_review_edit_access(self):
+        authHeaders = {
+            'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
+        }
+        user = self.editUser
+        mainNodes = create_two_main_nodes_for_owner(user, parent=self.rootNode, type='books')
+        for mainNode in mainNodes:
+            for subNode in create_two_sub_nodes_for_parent_node(mainNode):
+                leaves = create_two_sub_nodes_for_parent_node(subNode)
+                leaves[0].review = 'This a first review'
+                db.session.add(leaves[0])
+                leaves[1].description = 'This is a second review'
+                db.session.add(leaves[1])
+                db.session.commit()
+        # we now have a three level hierarchy we can test against
+        response = self.client.get('/nodes', headers=authHeaders, 
+                                   content_type='application/json')
+        self.assertEqual(200, response.status_code)
+        self.assertIn('nodeCount', response.json)
+        self.assertEqual(15, response.json['nodeCount'])
+        response = self.client.get('/nodes/depth/3?ownerId='+str(user.id)+'&type=books&review=a first', headers=authHeaders)
+        self.assertEqual(200, response.status_code)
+        self.assertIn('nodeCount', response.json)
+        self.assertEqual(4, response.json['nodeCount'])
+        
+    def test_get_depth_3_nodes_filter_name_edit_access(self):
+        authHeaders = {
+            'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
+        }
+        user = self.editUser
+        mainNodes = create_two_main_nodes_for_owner(user, parent=self.rootNode, type='books')
+        for mainNode in mainNodes:
+            for subNode in create_two_sub_nodes_for_parent_node(mainNode):
+                create_two_sub_nodes_for_parent_node(subNode)
+        # we now have a three level hierarchy we can test against
+        response = self.client.get('/nodes', headers=authHeaders, 
+                                   content_type='application/json')
+        self.assertEqual(200, response.status_code)
+        self.assertIn('nodeCount', response.json)
+        self.assertEqual(15, response.json['nodeCount'])
+        response = self.client.get('/nodes/depth/3?ownerId='+str(user.id)+'&type=books&name=owner:Edit_1', headers=authHeaders)
+        self.assertEqual(200, response.status_code)
+        self.assertIn('nodeCount', response.json)
+        self.assertEqual(4, response.json['nodeCount'])
             
     def test_get_main_nodes_with_info_3_edit_access(self):
         authHeaders = {

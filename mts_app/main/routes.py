@@ -104,6 +104,66 @@ def getMainNodes():
         nodesJson['nodes'].append(node.buildPublicJson())
     return jsonify(nodesJson)
 
+@main_bp.route('/nodes/depth/3', methods=['GET'])
+@auth.login_required
+def getNodesDepth3():
+    validateUser()
+    exactFilterBy = {}
+    likeFilterBy = {}
+    ownerTypeFilterBy = {}
+    for key,value in iter(request.args.to_dict().items()):
+        if key in Node.validExactSearchFields():
+            exactFilterBy[key] = value
+        if key in Node.validLikeSearchFields():
+            likeFilterBy[key] = value
+    orderField = request.args.get('orderField', 'name')
+    orderDir = request.args.get('orderDir', 'desc')
+    if orderField and orderField not in Node.validOrderByFields():
+        raise BadRequest('orderField is not valid. Valid fields = ' + str(Node.validOrderByFields()))
+    if orderDir.lower() not in ['asc', 'desc']:
+        raise BadRequest('orderBy can only be "asc" or "desc"')
+    if exactFilterBy.get('ownerId', None):
+        ownerTypeFilterBy['ownerId'] = exactFilterBy.get('ownerId')
+        ownerQuery = User.query.filter_by(id= exactFilterBy['ownerId'])
+        if ownerQuery.count() == 0:
+            raise NotFound('Invalid ownername specified in main/nodes request, so no nodes could be found')
+    else:
+        raise NotFound('Owner ID not specified')
+    if exactFilterBy.get('type', None):
+        ownerTypeFilterBy['type'] = exactFilterBy.get('type')
+    else:
+        raise NotFound('Type not specified')
+    rootNode = Node.query.filter_by(parent=None).first()
+    # get all nodes with the given owner and type
+    all1 = db.session.query(Node)\
+                  .filter_by(**ownerTypeFilterBy)\
+                  .subquery()
+    
+    ownerTypeFilterBy['parentId'] = rootNode.id
+    # get all sub nodes of main nodes under root node with given owner and type              
+    sub1 = db.session.query(Node.id)\
+                  .filter(Node.parentId.in_(db.session.query(Node.id)\
+                  .filter_by(**ownerTypeFilterBy)))\
+                  .subquery()
+    # get the delth 3 nodes and filter appropriately
+    nodes = db.session.query(Node)\
+                  .filter(Node.parentId.in_(sub1))\
+                  .filter_by(**exactFilterBy)
+    for likeKey, likeValue in likeFilterBy.items():
+        if likeKey == 'name':
+            nodes = nodes.filter(Node.name.ilike('%' + likeValue + '%'))
+        if likeKey == 'description':
+            nodes = nodes.filter(Node.description.ilike('%' + likeValue + '%'))
+        if likeKey == 'review':
+            nodes = nodes.filter(Node.review.ilike('%' + likeValue + '%'))
+    nodes = nodes.all()
+    nodesJson = {'nodes':[]}
+    nodesJson['nodeCount'] = len(nodes)
+    for node in nodes:
+        node.childCount = len(node.children);
+        nodesJson['nodes'].append(node.buildPublicJson())
+    return jsonify(nodesJson)
+
 @main_bp.route('/main/nodes/info/depth/3', methods=['GET'])
 @auth.login_required
 def getMainNodesWithInfo3():
@@ -144,7 +204,7 @@ def getMainNodesWithInfo3():
     sub1 = db.session.query(Node)\
                   .filter(Node.parentId.in_(db.session.query(Node.id)\
                   .filter_by(**exactFilterBy)))
-    for likeKey, likeValue in likeFilterBy:
+    for likeKey, likeValue in likeFilterBy.items():
         if likeKey == 'name':
             sub1 = all1.filter(Node.name.ilike('%' + likeValue + '%'))
         if likeKey == 'description':
