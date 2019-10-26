@@ -64,7 +64,7 @@ def verify_password(username, password):
 def unauthorized():
     return make_response(jsonify({'error': 'Unauthorized access'}), 403)
 
-def getNodesFromLevel(level, excludeRoot=False):
+def getNodesFromLevel(level=1, limit=-1, excludeRoot=False):
     """
     Filter and return nodes from the given level of hierarchy. Include Root node unless
     excludeRoot is specified.
@@ -92,13 +92,34 @@ def getNodesFromLevel(level, excludeRoot=False):
     if level == 1:
         infoDepth = int(request.args.get('infoDepth', -1))
         if infoDepth == -1:
-            return getLevel1Nodes(exactFilterBy=exactFilterBy, likeFilterBy=likeFilterBy, orderField=orderField, orderDir=orderDir, excludeRoot=excludeRoot)
+            return getLevel1Nodes(exactFilterBy=exactFilterBy, 
+                                  likeFilterBy=likeFilterBy, 
+                                  orderField=orderField, 
+                                  orderDir=orderDir, 
+                                  limit=limit,
+                                  excludeRoot=excludeRoot)
         else:
-            return getLevel1NodesWithInfo(exactFilterBy=exactFilterBy, likeFilterBy=likeFilterBy, orderField=orderField, orderDir=orderDir, excludeRoot=excludeRoot, infoDepth=infoDepth)
+            return getLevel1NodesWithInfo(exactFilterBy=exactFilterBy, 
+                                          likeFilterBy=likeFilterBy, 
+                                          orderField=orderField, 
+                                          orderDir=orderDir, 
+                                          limit=limit,
+                                          excludeRoot=excludeRoot, 
+                                          infoDepth=infoDepth)
     if level == 3:
-        return getLevel3Nodes(exactFilterBy=exactFilterBy, likeFilterBy=likeFilterBy, orderField=orderField, orderDir=orderDir, excludeRoot=excludeRoot)
+        return getLevel3Nodes(exactFilterBy=exactFilterBy, 
+                              likeFilterBy=likeFilterBy, 
+                              orderField=orderField, 
+                              orderDir=orderDir, 
+                              limit=limit,
+                              excludeRoot=excludeRoot)
     
-def getLevel3Nodes(exactFilterBy={}, likeFilterBy={}, orderField=None, orderDir=None, excludeRoot=False):
+def getLevel3Nodes(exactFilterBy={}, 
+                   likeFilterBy={}, 
+                   orderField=None, 
+                   orderDir=None, 
+                   limit=-1, 
+                   excludeRoot=False):
     ownerTypeFilterBy={}
     if exactFilterBy.get('ownerId', None):
         ownerTypeFilterBy['ownerId'] = exactFilterBy.get('ownerId')
@@ -134,7 +155,10 @@ def getLevel3Nodes(exactFilterBy={}, likeFilterBy={}, orderField=None, orderDir=
             nodes = nodes.filter(Node.description.ilike('%' + likeValue + '%'))
         if likeKey == 'review':
             nodes = nodes.filter(Node.review.ilike('%' + likeValue + '%'))
-    nodes = nodes.all()
+    if limit != -1:
+        nodes = nodes.limit(limit).all()
+    else:
+        nodes = nodes.all()
     if not excludeRoot:
         nodes.append(rootNode)
     nodesJson = {'nodes':[]}
@@ -144,7 +168,12 @@ def getLevel3Nodes(exactFilterBy={}, likeFilterBy={}, orderField=None, orderDir=
         nodesJson['nodes'].append(node.buildPublicJson())
     return jsonify(nodesJson)
 
-def getLevel1Nodes(exactFilterBy={}, likeFilterBy={}, orderField=None, orderDir=None, excludeRoot=False):
+def getLevel1Nodes(exactFilterBy={}, 
+                   likeFilterBy={}, 
+                   orderField=None, 
+                   orderDir=None, 
+                   limit=-1,
+                   excludeRoot=False):
     
     rootNode = Node.query.filter_by(parent=None).first()
     exactFilterBy['parentId'] = rootNode.id
@@ -156,7 +185,11 @@ def getLevel1Nodes(exactFilterBy={}, likeFilterBy={}, orderField=None, orderDir=
             nodes = nodes.filter(Node.description.ilike('%' + likeValue + '%'))
         if likeKey == 'review':
             nodes = nodes.filter(Node.review.ilike('%' + likeValue + '%'))
-    nodes = nodes.order_by(orderField).all()
+    nodes = nodes.order_by(orderField)
+    if limit != -1:
+        nodes = nodes.limit(limit).all()
+    else:
+        nodes = nodes.all()
     if(not excludeRoot):
         nodes.append(rootNode)
     nodesJson = {'nodes':[]}
@@ -166,7 +199,13 @@ def getLevel1Nodes(exactFilterBy={}, likeFilterBy={}, orderField=None, orderDir=
         nodesJson['nodes'].append(node.buildPublicJson())
     return jsonify(nodesJson)
 
-def getLevel1NodesWithInfo(exactFilterBy={}, likeFilterBy={}, orderField=None, orderDir=None, excludeRoot=False, infoDepth=None):
+def getLevel1NodesWithInfo(exactFilterBy={}, 
+                           likeFilterBy={}, 
+                           orderField=None, 
+                           orderDir=None, 
+                           limit=-1,
+                           excludeRoot=False, 
+                           infoDepth=None):
     if infoDepth != 3:
         raise BadRequest('Requesting level 1 nodes with information to a depth other than 3 not supported yet')
     if exactFilterBy.get('ownerId', None):
@@ -234,8 +273,11 @@ def getLevel1NodesWithInfo(exactFilterBy={}, likeFilterBy={}, orderField=None, o
                                select([func.sum(asub2.c.needChildren)]).where(asub2.c.parentId==main1WithNumSubs.c.id).label('needLeaves'),
                                select([func.sum(asub2.c.haveTriedChildren)]).where(asub2.c.parentId==main1WithNumSubs.c.id).label('haveTriedLeaves'),
                                select([func.sum(asub2.c.numberChildren)]).where(asub2.c.parentId==main1WithNumSubs.c.id).label('numberLeaves'))\
-                   .distinct()\
-                   .all()
+                   .distinct()
+    if limit != -1:
+        rows = rows.limit(limit).all()
+    else:
+        rows = rows.all()
     nodes = []
     for row in rows:
         rowDict = row._asdict()
@@ -322,9 +364,18 @@ def getNodes():
     """
     
     level = int(request.args.get('level', -1))
+    if 'limit' in request.args:
+        try:
+            limit = int(request.args.get('limit', ''))
+        except ValueError as e:
+            raise BadRequest('limit argument must be numeric')
+        if limit <= 0:
+            raise BadRequest('limit argument must be greater than 0')
+    else:
+        limit = -1    
     excludeRoot = 'excludeRoot' in request.args
     if level > -1:
-        return getNodesFromLevel(level, excludeRoot)
+        return getNodesFromLevel(level=level, limit=limit, excludeRoot=excludeRoot)
     validateUser()
     exactFilterBy = {}
     likeFilterBy = {}
@@ -352,7 +403,11 @@ def getNodes():
             nodes = nodes.filter(Node.description.ilike('%' + likeValue + '%'))
         if likeKey == 'review':
             nodes = nodes.filter(Node.review.ilike('%' + likeValue + '%'))
-    nodes = nodes.order_by(orderField).all()
+    nodes = nodes.order_by(orderField)
+    if limit != -1:
+        nodes = nodes.limit(limit).all()
+    else:
+        nodes = nodes.all()    
     if(not excludeRoot):
         rootNode = Node.query.filter_by(parent=None).first()
         nodes.append(rootNode)
