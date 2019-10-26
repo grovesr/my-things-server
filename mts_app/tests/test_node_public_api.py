@@ -31,7 +31,7 @@ class NodeApiTests(MyThingsTest):
     
     def test_get_main_nodes_no_auth(self):
 
-        response = self.client.get('/main/nodes')
+        response = self.client.get('/nodes?level=1')
         self.assertEqual(response.status_code, 403)
         self.assertIn('error', response.json)
         self.assertEqual('Unauthorized access', response.json['error'])
@@ -39,7 +39,7 @@ class NodeApiTests(MyThingsTest):
     def test_get_main_nodes_bad_login_creds(self):
         authHeaders = {'Authorization': 'Basic %s' % b64encode(b"foo:bar").decode("ascii")
                        }
-        response = self.client.get('/main/nodes')
+        response = self.client.get('/nodes?level=1')
         self.assertEqual(response.status_code, 403)
         self.assertIn('error', response.json)
         self.assertEqual('Unauthorized access', response.json['error'])
@@ -49,7 +49,7 @@ class NodeApiTests(MyThingsTest):
             'Authorization': 'Basic %s' % b64encode(b"Readonly:test").decode("ascii")
         }
         
-        response = self.client.get('/main/nodes', headers=authHeaders)
+        response = self.client.get('/nodes?level=1', headers=authHeaders)
         self.assertEqual(200, response.status_code)
         self.assertIn('nodeCount', response.json)
         self.assertEqual(1, response.json['nodeCount'])
@@ -59,7 +59,7 @@ class NodeApiTests(MyThingsTest):
             'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
         }
         
-        response = self.client.get('/main/nodes', headers=authHeaders)
+        response = self.client.get('/nodes?level=1', headers=authHeaders)
         self.assertEqual(200, response.status_code)
         self.assertIn('nodeCount', response.json)
         self.assertEqual(1, response.json['nodeCount'])
@@ -133,7 +133,7 @@ class NodeApiTests(MyThingsTest):
                                  content_type='application/json',
                                  headers=authHeaders)
         self.assertEqual(response.status_code, 201) 
-        response = self.client.post('/main/nodes', headers=authHeaders)
+        response = self.client.post('/nodes?level=1', headers=authHeaders)
         self.assertEqual(response.status_code, 405)
         
     def test_get_main_nodes_bad_method_put(self):
@@ -152,7 +152,7 @@ class NodeApiTests(MyThingsTest):
                                  content_type='application/json',
                                  headers=authHeaders)
         self.assertEqual(response.status_code, 201) 
-        response = self.client.put('/main/nodes', headers=authHeaders)
+        response = self.client.put('/nodes?level=1', headers=authHeaders)
         self.assertEqual(response.status_code, 405)
         
     def test_get_main_nodes_bad_method_delete(self):
@@ -171,7 +171,7 @@ class NodeApiTests(MyThingsTest):
                                  content_type='application/json',
                                  headers=authHeaders)
         self.assertEqual(response.status_code, 201) 
-        response = self.client.delete('/main/nodes', headers=authHeaders)
+        response = self.client.delete('/nodes?level=1', headers=authHeaders)
         self.assertEqual(response.status_code, 405)
     
     def test_get_nodes_bad_method_post(self):
@@ -282,7 +282,7 @@ class NodeApiTests(MyThingsTest):
         with current_app.app_context():
             self.assertEqual(url_for('main.getNodeFromId',nodeId=response.json['id'], 
                                      _external=True), response.json['uri'])
-        
+            
     def test_get_node_read_access(self):
         authHeaders = {
             'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
@@ -305,6 +305,25 @@ class NodeApiTests(MyThingsTest):
         with current_app.app_context():
             self.assertEqual(url_for('main.getNodeFromId',nodeId=response.json['id'], 
                                      _external=True), response.json['uri'])
+            
+    def test_get_node_bad_id(self):
+        authHeaders = {
+            'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
+        }
+        data={'name':'MainNode1', 'owner':self.editUser.username, 'type': 'books'}
+        response = self.client.post('/add/node',
+                                 data=json.dumps(data),
+                                 content_type='application/json',
+                                 headers=authHeaders)
+        self.assertEqual(response.status_code, 201)
+        authHeaders = {
+            'Authorization': 'Basic %s' % b64encode(b"Readonly:test").decode("ascii")
+        }
+        response = self.client.get('/node/foo',
+                                 headers=authHeaders)
+        self.assertEqual(404, response.status_code)
+        self.assertIn('error', response.json)
+        self.assertIn('Node not found', response.json['error'])
             
     def test_update_node_edit_access(self):
         authHeaders = {
@@ -351,6 +370,27 @@ class NodeApiTests(MyThingsTest):
         with current_app.app_context():
             self.assertEqual(url_for('main.getNodeFromId',nodeId=response.json['id'], 
                                      _external=True), response.json['uri'])
+    
+    def test_update_node_bad_id(self):
+        authHeaders = {
+            'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
+        }
+        data={'name':'MainNode1', 'owner':self.editUser.username, 'type': 'books'}
+        response = self.client.post('/add/node',
+                                 data=json.dumps(data),
+                                 content_type='application/json',
+                                 headers=authHeaders)
+        self.assertEqual(201, response.status_code)
+        data={'name':'', 'type':'newType', 'description':'newDescription',
+              'nodeInfo':{'new':'info'}, 'haveTried':True, 'review':'newReview',
+              'rating':5, 'dateTried':'06/11/2018', 'dateReviewed':'06/11/2018'} 
+        response = self.client.put('/node/foo',
+                                 data=json.dumps(data),
+                                 content_type='application/json',
+                                 headers=authHeaders)
+        self.assertEqual(404, response.status_code)
+        self.assertIn('error', response.json)
+        self.assertIn('Node not found', response.json['error'])
     
     def test_update_node_empty_name(self):
         authHeaders = {
@@ -1059,8 +1099,412 @@ class NodeApiTests(MyThingsTest):
                                  content_type='application/json',
                                  headers=authHeaders)
         self.assertEqual(201, response.status_code)  
+           
+    def test_get_level_3_nodes_filter_description_edit_access(self):
+        authHeaders = {
+            'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
+        }
+        user = self.editUser
+        mainNodes = create_two_main_nodes_for_owner(user, parent=self.rootNode, type='books')
+        for mainNode in mainNodes:
+            for subNode in create_two_sub_nodes_for_parent_node(mainNode):
+                leaves = create_two_sub_nodes_for_parent_node(subNode)
+                leaves[0].description = 'This a first description'
+                db.session.add(leaves[0])
+                leaves[1].description = 'This is a second description'
+                db.session.add(leaves[1])
+                db.session.commit()
+        # we now have a three level hierarchy we can test against
+        response = self.client.get('/nodes', headers=authHeaders, 
+                                   content_type='application/json')
+        self.assertEqual(200, response.status_code)
+        self.assertIn('nodeCount', response.json)
+        self.assertEqual(15, response.json['nodeCount'])
+        response = self.client.get('/nodes?ownerId='+str(user.id)+'&type=books&description=a first&level=3&excludeRoot', headers=authHeaders)
+        self.assertEqual(200, response.status_code)
+        self.assertIn('nodeCount', response.json)
+        self.assertEqual(4, response.json['nodeCount'])
         
-    def test_get_main_nodes_edit_access(self):
+    def test_get_level_3_nodes_filter_description_include_root_node(self):
+        authHeaders = {
+            'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
+        }
+        user = self.editUser
+        mainNodes = create_two_main_nodes_for_owner(user, parent=self.rootNode, type='books')
+        for mainNode in mainNodes:
+            for subNode in create_two_sub_nodes_for_parent_node(mainNode):
+                leaves = create_two_sub_nodes_for_parent_node(subNode)
+                leaves[0].description = 'This a first description'
+                db.session.add(leaves[0])
+                leaves[1].description = 'This is a second description'
+                db.session.add(leaves[1])
+                db.session.commit()
+        # we now have a three level hierarchy we can test against
+        response = self.client.get('/nodes', headers=authHeaders, 
+                                   content_type='application/json')
+        self.assertEqual(200, response.status_code)
+        self.assertIn('nodeCount', response.json)
+        self.assertEqual(15, response.json['nodeCount'])
+        response = self.client.get('/nodes?ownerId='+str(user.id)+'&type=books&description=a first&level=3', headers=authHeaders)
+        self.assertEqual(200, response.status_code)
+        self.assertIn('nodeCount', response.json)
+        self.assertEqual(5, response.json['nodeCount'])
+    
+    def test_get_level_3_nodes_filter_review_edit_access(self):
+        authHeaders = {
+            'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
+        }
+        user = self.editUser
+        mainNodes = create_two_main_nodes_for_owner(user, parent=self.rootNode, type='books')
+        for mainNode in mainNodes:
+            for subNode in create_two_sub_nodes_for_parent_node(mainNode):
+                leaves = create_two_sub_nodes_for_parent_node(subNode)
+                leaves[0].review = 'This a first review'
+                db.session.add(leaves[0])
+                leaves[1].description = 'This is a second review'
+                db.session.add(leaves[1])
+                db.session.commit()
+        # we now have a three level hierarchy we can test against
+        response = self.client.get('/nodes', headers=authHeaders, 
+                                   content_type='application/json')
+        self.assertEqual(200, response.status_code)
+        self.assertIn('nodeCount', response.json)
+        self.assertEqual(15, response.json['nodeCount'])
+        response = self.client.get('/nodes?ownerId='+str(user.id)+'&type=books&review=a first&level=3&excludeRoot', headers=authHeaders)
+        self.assertEqual(200, response.status_code)
+        self.assertIn('nodeCount', response.json)
+        self.assertEqual(4, response.json['nodeCount'])
+        
+    def test_get_level_3_nodes_filter_name_edit_access(self):
+        authHeaders = {
+            'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
+        }
+        user = self.editUser
+        mainNodes = create_two_main_nodes_for_owner(user, parent=self.rootNode, type='books')
+        for mainNode in mainNodes:
+            for subNode in create_two_sub_nodes_for_parent_node(mainNode):
+                create_two_sub_nodes_for_parent_node(subNode)
+        # we now have a three level hierarchy we can test against
+        response = self.client.get('/nodes', headers=authHeaders, 
+                                   content_type='application/json')
+        self.assertEqual(200, response.status_code)
+        self.assertIn('nodeCount', response.json)
+        self.assertEqual(15, response.json['nodeCount'])
+        response = self.client.get('/nodes?ownerId='+str(user.id)+'&type=books&name=owner:Edit_1&level=3&excludeRoot', headers=authHeaders)
+        self.assertEqual(200, response.status_code)
+        self.assertIn('nodeCount', response.json)
+        self.assertEqual(4, response.json['nodeCount'])
+            
+    def test_get_level_1_nodes_with_info_depth_3_edit_access(self):
+        authHeaders = {
+            'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
+        }
+        user = self.editUser
+        mainNodes = create_two_main_nodes_for_owner(user, parent=self.rootNode)
+        leafRating = 0
+        need = False
+        haveTried = False
+        for mainNode in mainNodes:
+            need = not(need)
+            haveTried = not(haveTried)
+            subNodes = create_two_sub_nodes_for_parent_node(mainNode)
+            for subNode in subNodes:
+                for leaf in create_two_sub_nodes_for_parent_node(subNode):
+                    leafRating += 1
+                    leaf.rating = leafRating
+                    leaf.need = need
+                    leaf.haveTried = haveTried
+        # we now have a three level hierarchy we can test against
+        response = self.client.get('/nodes', headers=authHeaders, 
+                                   content_type='application/json')
+        self.assertEqual(200, response.status_code)
+        self.assertIn('nodeCount', response.json)
+        self.assertEqual(15, response.json['nodeCount'])
+        response = self.client.get('/nodes?ownerId='+str(user.id)+'&level=1&infoDepth=3', headers=authHeaders)
+        self.assertEqual(200, response.status_code)
+        self.assertIn('nodeCount', response.json)
+        self.assertEqual(3, response.json['nodeCount'])
+        self.assertIn('nodes', response.json)
+        mainNodeJson1 = [nodeJson for nodeJson in response.json['nodes'] if nodeJson['name'] == 'node:Main Node, owner:Edit_1'][0]
+        mainNodeJson2 = [nodeJson for nodeJson in response.json['nodes'] if nodeJson['name'] == 'node:Main Node, owner:Edit_2'][0]
+        self.assertIn('nodeInfo', mainNodeJson1)
+        self.assertIn('numberSubs', mainNodeJson1['nodeInfo'])
+        self.assertEqual(2, mainNodeJson1['nodeInfo']['numberSubs'])
+        
+    def test_get_level_1_nodes_with_info_depth_3_exclude_root_node(self):
+        authHeaders = {
+            'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
+        }
+        user = self.editUser
+        mainNodes = create_two_main_nodes_for_owner(user, parent=self.rootNode)
+        leafRating = 0
+        need = False
+        haveTried = False
+        for mainNode in mainNodes:
+            need = not(need)
+            haveTried = not(haveTried)
+            subNodes = create_two_sub_nodes_for_parent_node(mainNode)
+            for subNode in subNodes:
+                for leaf in create_two_sub_nodes_for_parent_node(subNode):
+                    leafRating += 1
+                    leaf.rating = leafRating
+                    leaf.need = need
+                    leaf.haveTried = haveTried
+        # we now have a three level hierarchy we can test against
+        response = self.client.get('/nodes', headers=authHeaders, 
+                                   content_type='application/json')
+        self.assertEqual(200, response.status_code)
+        self.assertIn('nodeCount', response.json)
+        self.assertEqual(15, response.json['nodeCount'])
+        response = self.client.get('/nodes?ownerId='+str(user.id)+'&level=1&infoDepth=3&excludeRoot', headers=authHeaders)
+        self.assertEqual(200, response.status_code)
+        self.assertIn('nodeCount', response.json)
+        self.assertEqual(2, response.json['nodeCount'])
+    
+    def test_get_level_1_nodes_with_no_leaf_under_1_sub_info_depth_3(self):
+        authHeaders = {
+            'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
+        }
+        user = self.editUser
+        mainNodes = create_two_main_nodes_for_owner(user, parent=self.rootNode)
+        for mainNode in mainNodes:
+            subNodes = create_two_sub_nodes_for_parent_node(mainNode)
+            create_two_sub_nodes_for_parent_node(subNodes[0])
+        # we now have a three level hierarchy  with two missing leaf nodes under 1 sub of each main that we can test against
+        response = self.client.get('/nodes', headers=authHeaders, 
+                                   content_type='application/json')
+        self.assertEqual(200, response.status_code)
+        self.assertIn('nodeCount', response.json)
+        self.assertEqual(11, response.json['nodeCount'])
+        response = self.client.get('/nodes?ownerId='+str(user.id)+'&level=1&infoDepth=3', headers=authHeaders)
+        self.assertEqual(200, response.status_code)
+        self.assertIn('nodeCount', response.json)
+        self.assertEqual(3, response.json['nodeCount'])
+        self.assertIn('nodes', response.json)
+        mainNodeJson1 = [nodeJson for nodeJson in response.json['nodes'] if nodeJson['name'] == 'node:Main Node, owner:Edit_1'][0]
+        mainNodeJson2 = [nodeJson for nodeJson in response.json['nodes'] if nodeJson['name'] == 'node:Main Node, owner:Edit_2'][0]
+        self.assertIn('nodeInfo', mainNodeJson1)
+        self.assertIn('numberSubs', mainNodeJson1['nodeInfo'])
+        self.assertEqual(2, mainNodeJson1['nodeInfo']['numberSubs'])
+        self.assertIn('averageLeafRating', mainNodeJson1['nodeInfo'])
+        self.assertEqual(None, mainNodeJson1['nodeInfo']['averageLeafRating'])
+        self.assertIn('needLeaves', mainNodeJson1['nodeInfo'])
+        self.assertEqual(0, mainNodeJson1['nodeInfo']['needLeaves'])
+        self.assertIn('numberLeaves', mainNodeJson1['nodeInfo'])
+        self.assertEqual(2, mainNodeJson1['nodeInfo']['numberLeaves'])
+        self.assertIn('haveTriedLeaves', mainNodeJson1['nodeInfo'])
+        self.assertEqual(0, mainNodeJson1['nodeInfo']['haveTriedLeaves'])
+        self.assertIn('nodeInfo', mainNodeJson2)
+        self.assertIn('numberSubs', mainNodeJson2['nodeInfo'])
+        self.assertEqual(2, mainNodeJson2['nodeInfo']['numberSubs'])
+        self.assertIn('averageLeafRating', mainNodeJson2['nodeInfo'])
+        self.assertEqual(None, mainNodeJson2['nodeInfo']['averageLeafRating'])
+        self.assertIn('needLeaves', mainNodeJson2['nodeInfo'])
+        self.assertEqual(0, mainNodeJson2['nodeInfo']['needLeaves'])
+        self.assertIn('numberLeaves', mainNodeJson2['nodeInfo'])
+        self.assertEqual(2, mainNodeJson2['nodeInfo']['numberLeaves'])
+        self.assertIn('haveTriedLeaves', mainNodeJson2['nodeInfo'])
+        self.assertEqual(0, mainNodeJson2['nodeInfo']['haveTriedLeaves'])
+    
+    def test_get_level_1_nodes_with_info_depth_3_no_leaf_info(self):
+        authHeaders = {
+            'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
+        }
+        user = self.editUser
+        mainNodes = create_two_main_nodes_for_owner(user, parent=self.rootNode)
+        for mainNode in mainNodes:
+            for subNode in create_two_sub_nodes_for_parent_node(mainNode):
+                create_two_sub_nodes_for_parent_node(subNode)
+        # we now have a three level hierarchy we can test against
+        response = self.client.get('/nodes', headers=authHeaders, 
+                                   content_type='application/json')
+        self.assertEqual(200, response.status_code)
+        self.assertIn('nodeCount', response.json)
+        self.assertEqual(15, response.json['nodeCount'])
+        response = self.client.get('/nodes?ownerId='+str(user.id)+'&level=1&infoDepth=3', headers=authHeaders)
+        self.assertEqual(200, response.status_code)
+        self.assertIn('nodeCount', response.json)
+        self.assertEqual(3, response.json['nodeCount'])
+        self.assertIn('nodes', response.json)
+        mainNodeJson1 = [nodeJson for nodeJson in response.json['nodes'] if nodeJson['name'] == 'node:Main Node, owner:Edit_1'][0]
+        mainNodeJson2 = [nodeJson for nodeJson in response.json['nodes'] if nodeJson['name'] == 'node:Main Node, owner:Edit_2'][0]
+        self.assertIn('nodeInfo', mainNodeJson1)
+        self.assertIn('numberSubs', mainNodeJson1['nodeInfo'])
+        self.assertEqual(2, mainNodeJson1['nodeInfo']['numberSubs'])
+        self.assertIn('averageLeafRating', mainNodeJson1['nodeInfo'])
+        self.assertEqual(None, mainNodeJson1['nodeInfo']['averageLeafRating'])
+        self.assertIn('needLeaves', mainNodeJson1['nodeInfo'])
+        self.assertEqual(0, mainNodeJson1['nodeInfo']['needLeaves'])
+        self.assertIn('numberLeaves', mainNodeJson1['nodeInfo'])
+        self.assertEqual(4, mainNodeJson1['nodeInfo']['numberLeaves'])
+        self.assertIn('haveTriedLeaves', mainNodeJson1['nodeInfo'])
+        self.assertEqual(0, mainNodeJson1['nodeInfo']['haveTriedLeaves'])
+        self.assertIn('nodeInfo', mainNodeJson2)
+        self.assertIn('numberSubs', mainNodeJson2['nodeInfo'])
+        self.assertEqual(2, mainNodeJson2['nodeInfo']['numberSubs'])
+        self.assertIn('averageLeafRating', mainNodeJson2['nodeInfo'])
+        self.assertEqual(None, mainNodeJson2['nodeInfo']['averageLeafRating'])
+        self.assertIn('needLeaves', mainNodeJson2['nodeInfo'])
+        self.assertEqual(0, mainNodeJson2['nodeInfo']['needLeaves'])
+        self.assertIn('numberLeaves', mainNodeJson2['nodeInfo'])
+        self.assertEqual(4, mainNodeJson2['nodeInfo']['numberLeaves'])
+        self.assertIn('haveTriedLeaves', mainNodeJson2['nodeInfo'])
+        self.assertEqual(0, mainNodeJson2['nodeInfo']['haveTriedLeaves'])
+    
+    def test_get_level_1_nodes_with_info_depth_3_no_sub_info(self):
+        authHeaders = {
+            'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
+        }
+        user = self.editUser
+        mainNodes = create_two_main_nodes_for_owner(user, parent=self.rootNode)
+        # we now have a three level hierarchy we can test against
+        response = self.client.get('/nodes', headers=authHeaders, 
+                                   content_type='application/json')
+        self.assertEqual(200, response.status_code)
+        self.assertIn('nodeCount', response.json)
+        self.assertEqual(3, response.json['nodeCount'])
+        response = self.client.get('/nodes?ownerId='+str(user.id)+'&level=1&infoDepth=3', headers=authHeaders)
+        self.assertEqual(200, response.status_code)
+        self.assertIn('nodeCount', response.json)
+        self.assertEqual(3, response.json['nodeCount'])
+        self.assertIn('nodes', response.json)
+        mainNodeJson1 = [nodeJson for nodeJson in response.json['nodes'] if nodeJson['name'] == 'node:Main Node, owner:Edit_1'][0]
+        mainNodeJson2 = [nodeJson for nodeJson in response.json['nodes'] if nodeJson['name'] == 'node:Main Node, owner:Edit_2'][0]
+        self.assertIn('nodeInfo', mainNodeJson1)
+        self.assertIn('numberSubs', mainNodeJson1['nodeInfo'])
+        self.assertEqual(0, mainNodeJson1['nodeInfo']['numberSubs'])
+        self.assertIn('averageLeafRating', mainNodeJson1['nodeInfo'])
+        self.assertEqual(None, mainNodeJson1['nodeInfo']['averageLeafRating'])
+        self.assertIn('needLeaves', mainNodeJson1['nodeInfo'])
+        self.assertEqual(0, mainNodeJson1['nodeInfo']['needLeaves'])
+        self.assertIn('numberLeaves', mainNodeJson1['nodeInfo'])
+        self.assertEqual(0, mainNodeJson1['nodeInfo']['numberLeaves'])
+        self.assertIn('haveTriedLeaves', mainNodeJson1['nodeInfo'])
+        self.assertEqual(0, mainNodeJson1['nodeInfo']['haveTriedLeaves'])
+        
+    def test_get_full_tree_depth_3_from_main_node(self):
+        authHeaders = {
+            'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
+        }
+        user = self.editUser
+        mainNodes = create_two_main_nodes_for_owner(user, parent=self.rootNode)
+        for mainNode in mainNodes:
+            for subNode in create_two_sub_nodes_for_parent_node(mainNode):
+                create_two_sub_nodes_for_parent_node(subNode)
+        # we now have a three level hierarchy we can test against
+        response = self.client.get('/nodes', headers=authHeaders, 
+                                   content_type='application/json')
+        self.assertEqual(200, response.status_code)
+        self.assertIn('nodeCount', response.json)
+        self.assertEqual(15, response.json['nodeCount'])
+        response = self.client.get('/tree?id='+str(mainNodes[0].id)+'&depth=3&excludeRoot', headers=authHeaders)
+        self.assertEqual(200, response.status_code)
+        self.assertIn('nodeCount', response.json)
+        self.assertEqual(7, response.json['nodeCount'])
+        
+    def test_get_full_tree_depth_3_from_main_node_incude_root_node(self):
+        authHeaders = {
+            'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
+        }
+        user = self.editUser
+        mainNodes = create_two_main_nodes_for_owner(user, parent=self.rootNode)
+        for mainNode in mainNodes:
+            for subNode in create_two_sub_nodes_for_parent_node(mainNode):
+                create_two_sub_nodes_for_parent_node(subNode)
+        # we now have a three level hierarchy we can test against
+        response = self.client.get('/nodes', headers=authHeaders, 
+                                   content_type='application/json')
+        self.assertEqual(200, response.status_code)
+        self.assertIn('nodeCount', response.json)
+        self.assertEqual(15, response.json['nodeCount'])
+        response = self.client.get('/tree?id='+str(mainNodes[0].id)+'&depth=3', headers=authHeaders)
+        self.assertEqual(200, response.status_code)
+        self.assertIn('nodeCount', response.json)
+        self.assertEqual(8, response.json['nodeCount'])
+    
+    def test_get_full_tree_depth_3_from_sub_node(self):
+        authHeaders = {
+            'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
+        }
+        user = self.editUser
+        mainNodes = create_two_main_nodes_for_owner(user, parent=self.rootNode)
+        for mainNode in mainNodes:
+            for subNode in create_two_sub_nodes_for_parent_node(mainNode):
+                create_two_sub_nodes_for_parent_node(subNode)
+        # we now have a three level hierarchy we can test against
+        response = self.client.get('/nodes', headers=authHeaders, 
+                                   content_type='application/json')
+        self.assertEqual(200, response.status_code)
+        self.assertIn('nodeCount', response.json)
+        self.assertEqual(15, response.json['nodeCount'])
+        response = self.client.get('/tree?id='+str(mainNodes[0].children[0].id)+'&depth=3&excludeRoot', headers=authHeaders)
+        self.assertEqual(200, response.status_code)
+        self.assertIn('nodeCount', response.json)
+        self.assertEqual(7, response.json['nodeCount'])
+    
+    def test_get_full_tree_depth_3_from_leaf_node(self):
+        authHeaders = {
+            'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
+        }
+        user = self.editUser
+        mainNodes = create_two_main_nodes_for_owner(user, parent=self.rootNode)
+        for mainNode in mainNodes:
+            for subNode in create_two_sub_nodes_for_parent_node(mainNode):
+                create_two_sub_nodes_for_parent_node(subNode)
+        # we now have a three level hierarchy we can test against
+        response = self.client.get('/nodes', headers=authHeaders, 
+                                   content_type='application/json')
+        self.assertEqual(200, response.status_code)
+        self.assertIn('nodeCount', response.json)
+        self.assertEqual(15, response.json['nodeCount'])
+        response = self.client.get('/tree?id='+str(mainNodes[0].children[0].children[0].id)+'&depth=3&excludeRoot', headers=authHeaders)
+        self.assertEqual(200, response.status_code)
+        self.assertIn('nodeCount', response.json)
+        self.assertEqual(7, response.json['nodeCount'])
+        
+    def test_get_partial_tree_depth_3_from_main_node(self):
+        authHeaders = {
+            'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
+        }
+        user = self.editUser
+        mainNodes = create_two_main_nodes_for_owner(user, parent=self.rootNode)
+        for mainNode in mainNodes:
+            create_two_sub_nodes_for_parent_node(mainNode)
+        create_two_sub_nodes_for_parent_node(mainNodes[1].children[0])
+                
+        # we now have a three level hierarchy we can test against
+        response = self.client.get('/nodes', headers=authHeaders, 
+                                   content_type='application/json')
+        self.assertEqual(200, response.status_code)
+        self.assertIn('nodeCount', response.json)
+        self.assertEqual(9, response.json['nodeCount'])
+        response = self.client.get('/tree?id='+str(mainNodes[0].id)+'&depth=3&excludeRoot', headers=authHeaders)
+        self.assertEqual(200, response.status_code)
+        self.assertIn('nodeCount', response.json)
+        self.assertEqual(3, response.json['nodeCount'])
+            
+    def test_get_partial_tree_depth_3_from_sub_node(self):
+        authHeaders = {
+            'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
+        }
+        user = self.editUser
+        mainNodes = create_two_main_nodes_for_owner(user, parent=self.rootNode)
+        for mainNode in mainNodes:
+            create_two_sub_nodes_for_parent_node(mainNode)
+        create_two_sub_nodes_for_parent_node(mainNodes[1].children[0])
+                
+        # we now have a three level hierarchy we can test against
+        response = self.client.get('/nodes', headers=authHeaders, 
+                                   content_type='application/json')
+        self.assertEqual(200, response.status_code)
+        self.assertIn('nodeCount', response.json)
+        self.assertEqual(9, response.json['nodeCount'])
+        response = self.client.get('/tree?id='+str(mainNodes[0].children[0].id)+'&depth=3&excludeRoot', headers=authHeaders)
+        self.assertEqual(200, response.status_code)
+        self.assertIn('nodeCount', response.json)
+        self.assertEqual(3, response.json['nodeCount'])
+    
+    def test_get_level_1_nodes_edit_access(self):
         authHeaders = {
             'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
         }
@@ -1076,7 +1520,7 @@ class NodeApiTests(MyThingsTest):
                                  content_type='application/json',
                                  headers=authHeaders)
         self.assertEqual(201, response.status_code) 
-        response = self.client.get('/main/nodes', headers=authHeaders)
+        response = self.client.get('/nodes?level=1', headers=authHeaders)
         self.assertEqual(200, response.status_code)
         self.assertIn('nodeCount', response.json)
         self.assertEqual(3, response.json['nodeCount'])
@@ -1114,336 +1558,7 @@ class NodeApiTests(MyThingsTest):
             self.assertEqual(url_for('main.getNodeFromId',nodeId=mainNodeJson2['id'],
                                      _external=True), mainNodeJson2['uri'])
     
-    def test_get_depth_3_nodes_filter_description_edit_access(self):
-        authHeaders = {
-            'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
-        }
-        user = self.editUser
-        mainNodes = create_two_main_nodes_for_owner(user, parent=self.rootNode, type='books')
-        for mainNode in mainNodes:
-            for subNode in create_two_sub_nodes_for_parent_node(mainNode):
-                leaves = create_two_sub_nodes_for_parent_node(subNode)
-                leaves[0].description = 'This a first description'
-                db.session.add(leaves[0])
-                leaves[1].description = 'This is a second description'
-                db.session.add(leaves[1])
-                db.session.commit()
-        # we now have a three level hierarchy we can test against
-        response = self.client.get('/nodes', headers=authHeaders, 
-                                   content_type='application/json')
-        self.assertEqual(200, response.status_code)
-        self.assertIn('nodeCount', response.json)
-        self.assertEqual(15, response.json['nodeCount'])
-        response = self.client.get('/nodes/depth/3?ownerId='+str(user.id)+'&type=books&description=a first', headers=authHeaders)
-        self.assertEqual(200, response.status_code)
-        self.assertIn('nodeCount', response.json)
-        self.assertEqual(4, response.json['nodeCount'])
-    
-    def test_get_depth_3_nodes_filter_review_edit_access(self):
-        authHeaders = {
-            'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
-        }
-        user = self.editUser
-        mainNodes = create_two_main_nodes_for_owner(user, parent=self.rootNode, type='books')
-        for mainNode in mainNodes:
-            for subNode in create_two_sub_nodes_for_parent_node(mainNode):
-                leaves = create_two_sub_nodes_for_parent_node(subNode)
-                leaves[0].review = 'This a first review'
-                db.session.add(leaves[0])
-                leaves[1].description = 'This is a second review'
-                db.session.add(leaves[1])
-                db.session.commit()
-        # we now have a three level hierarchy we can test against
-        response = self.client.get('/nodes', headers=authHeaders, 
-                                   content_type='application/json')
-        self.assertEqual(200, response.status_code)
-        self.assertIn('nodeCount', response.json)
-        self.assertEqual(15, response.json['nodeCount'])
-        response = self.client.get('/nodes/depth/3?ownerId='+str(user.id)+'&type=books&review=a first', headers=authHeaders)
-        self.assertEqual(200, response.status_code)
-        self.assertIn('nodeCount', response.json)
-        self.assertEqual(4, response.json['nodeCount'])
-        
-    def test_get_depth_3_nodes_filter_name_edit_access(self):
-        authHeaders = {
-            'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
-        }
-        user = self.editUser
-        mainNodes = create_two_main_nodes_for_owner(user, parent=self.rootNode, type='books')
-        for mainNode in mainNodes:
-            for subNode in create_two_sub_nodes_for_parent_node(mainNode):
-                create_two_sub_nodes_for_parent_node(subNode)
-        # we now have a three level hierarchy we can test against
-        response = self.client.get('/nodes', headers=authHeaders, 
-                                   content_type='application/json')
-        self.assertEqual(200, response.status_code)
-        self.assertIn('nodeCount', response.json)
-        self.assertEqual(15, response.json['nodeCount'])
-        response = self.client.get('/nodes/depth/3?ownerId='+str(user.id)+'&type=books&name=owner:Edit_1', headers=authHeaders)
-        self.assertEqual(200, response.status_code)
-        self.assertIn('nodeCount', response.json)
-        self.assertEqual(4, response.json['nodeCount'])
-            
-    def test_get_main_nodes_with_info_3_edit_access(self):
-        authHeaders = {
-            'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
-        }
-        user = self.editUser
-        mainNodes = create_two_main_nodes_for_owner(user, parent=self.rootNode)
-        leafRating = 0
-        need = False
-        haveTried = False
-        for mainNode in mainNodes:
-            need = not(need)
-            haveTried = not(haveTried)
-            subNodes = create_two_sub_nodes_for_parent_node(mainNode)
-            for subNode in subNodes:
-                for leaf in create_two_sub_nodes_for_parent_node(subNode):
-                    leafRating += 1
-                    leaf.rating = leafRating
-                    leaf.need = need
-                    leaf.haveTried = haveTried
-        # we now have a three level hierarchy we can test against
-        response = self.client.get('/nodes', headers=authHeaders, 
-                                   content_type='application/json')
-        self.assertEqual(200, response.status_code)
-        self.assertIn('nodeCount', response.json)
-        self.assertEqual(15, response.json['nodeCount'])
-        response = self.client.get('/main/nodes/info/depth/3?ownerId='+str(user.id), headers=authHeaders)
-        self.assertEqual(200, response.status_code)
-        self.assertIn('nodeCount', response.json)
-        self.assertEqual(3, response.json['nodeCount'])
-        self.assertIn('nodes', response.json)
-        mainNodeJson1 = [nodeJson for nodeJson in response.json['nodes'] if nodeJson['name'] == 'node:Main Node, owner:Edit_1'][0]
-        mainNodeJson2 = [nodeJson for nodeJson in response.json['nodes'] if nodeJson['name'] == 'node:Main Node, owner:Edit_2'][0]
-        self.assertIn('nodeInfo', mainNodeJson1)
-        self.assertIn('numberSubs', mainNodeJson1['nodeInfo'])
-        self.assertEqual(2, mainNodeJson1['nodeInfo']['numberSubs'])
-    
-    def test_get_main_nodes_with_no_leaf_under_1_sub_info(self):
-        authHeaders = {
-            'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
-        }
-        user = self.editUser
-        mainNodes = create_two_main_nodes_for_owner(user, parent=self.rootNode)
-        for mainNode in mainNodes:
-            subNodes = create_two_sub_nodes_for_parent_node(mainNode)
-            create_two_sub_nodes_for_parent_node(subNodes[0])
-        # we now have a three level hierarchy  with two missing leaf nodes under 1 sub of each main that we can test against
-        response = self.client.get('/nodes', headers=authHeaders, 
-                                   content_type='application/json')
-        self.assertEqual(200, response.status_code)
-        self.assertIn('nodeCount', response.json)
-        self.assertEqual(11, response.json['nodeCount'])
-        response = self.client.get('/main/nodes/info/depth/3?ownerId='+str(user.id), headers=authHeaders)
-        self.assertEqual(200, response.status_code)
-        self.assertIn('nodeCount', response.json)
-        self.assertEqual(3, response.json['nodeCount'])
-        self.assertIn('nodes', response.json)
-        mainNodeJson1 = [nodeJson for nodeJson in response.json['nodes'] if nodeJson['name'] == 'node:Main Node, owner:Edit_1'][0]
-        mainNodeJson2 = [nodeJson for nodeJson in response.json['nodes'] if nodeJson['name'] == 'node:Main Node, owner:Edit_2'][0]
-        self.assertIn('nodeInfo', mainNodeJson1)
-        self.assertIn('numberSubs', mainNodeJson1['nodeInfo'])
-        self.assertEqual(2, mainNodeJson1['nodeInfo']['numberSubs'])
-        self.assertIn('averageLeafRating', mainNodeJson1['nodeInfo'])
-        self.assertEqual(None, mainNodeJson1['nodeInfo']['averageLeafRating'])
-        self.assertIn('needLeaves', mainNodeJson1['nodeInfo'])
-        self.assertEqual(0, mainNodeJson1['nodeInfo']['needLeaves'])
-        self.assertIn('numberLeaves', mainNodeJson1['nodeInfo'])
-        self.assertEqual(2, mainNodeJson1['nodeInfo']['numberLeaves'])
-        self.assertIn('haveTriedLeaves', mainNodeJson1['nodeInfo'])
-        self.assertEqual(0, mainNodeJson1['nodeInfo']['haveTriedLeaves'])
-        self.assertIn('nodeInfo', mainNodeJson2)
-        self.assertIn('numberSubs', mainNodeJson2['nodeInfo'])
-        self.assertEqual(2, mainNodeJson2['nodeInfo']['numberSubs'])
-        self.assertIn('averageLeafRating', mainNodeJson2['nodeInfo'])
-        self.assertEqual(None, mainNodeJson2['nodeInfo']['averageLeafRating'])
-        self.assertIn('needLeaves', mainNodeJson2['nodeInfo'])
-        self.assertEqual(0, mainNodeJson2['nodeInfo']['needLeaves'])
-        self.assertIn('numberLeaves', mainNodeJson2['nodeInfo'])
-        self.assertEqual(2, mainNodeJson2['nodeInfo']['numberLeaves'])
-        self.assertIn('haveTriedLeaves', mainNodeJson2['nodeInfo'])
-        self.assertEqual(0, mainNodeJson2['nodeInfo']['haveTriedLeaves'])
-    
-    def test_get_main_nodes_with_info_3_no_leaf_info(self):
-        authHeaders = {
-            'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
-        }
-        user = self.editUser
-        mainNodes = create_two_main_nodes_for_owner(user, parent=self.rootNode)
-        for mainNode in mainNodes:
-            for subNode in create_two_sub_nodes_for_parent_node(mainNode):
-                create_two_sub_nodes_for_parent_node(subNode)
-        # we now have a three level hierarchy we can test against
-        response = self.client.get('/nodes', headers=authHeaders, 
-                                   content_type='application/json')
-        self.assertEqual(200, response.status_code)
-        self.assertIn('nodeCount', response.json)
-        self.assertEqual(15, response.json['nodeCount'])
-        response = self.client.get('/main/nodes/info/depth/3?ownerId='+str(user.id), headers=authHeaders)
-        self.assertEqual(200, response.status_code)
-        self.assertIn('nodeCount', response.json)
-        self.assertEqual(3, response.json['nodeCount'])
-        self.assertIn('nodes', response.json)
-        mainNodeJson1 = [nodeJson for nodeJson in response.json['nodes'] if nodeJson['name'] == 'node:Main Node, owner:Edit_1'][0]
-        mainNodeJson2 = [nodeJson for nodeJson in response.json['nodes'] if nodeJson['name'] == 'node:Main Node, owner:Edit_2'][0]
-        self.assertIn('nodeInfo', mainNodeJson1)
-        self.assertIn('numberSubs', mainNodeJson1['nodeInfo'])
-        self.assertEqual(2, mainNodeJson1['nodeInfo']['numberSubs'])
-        self.assertIn('averageLeafRating', mainNodeJson1['nodeInfo'])
-        self.assertEqual(None, mainNodeJson1['nodeInfo']['averageLeafRating'])
-        self.assertIn('needLeaves', mainNodeJson1['nodeInfo'])
-        self.assertEqual(0, mainNodeJson1['nodeInfo']['needLeaves'])
-        self.assertIn('numberLeaves', mainNodeJson1['nodeInfo'])
-        self.assertEqual(4, mainNodeJson1['nodeInfo']['numberLeaves'])
-        self.assertIn('haveTriedLeaves', mainNodeJson1['nodeInfo'])
-        self.assertEqual(0, mainNodeJson1['nodeInfo']['haveTriedLeaves'])
-        self.assertIn('nodeInfo', mainNodeJson2)
-        self.assertIn('numberSubs', mainNodeJson2['nodeInfo'])
-        self.assertEqual(2, mainNodeJson2['nodeInfo']['numberSubs'])
-        self.assertIn('averageLeafRating', mainNodeJson2['nodeInfo'])
-        self.assertEqual(None, mainNodeJson2['nodeInfo']['averageLeafRating'])
-        self.assertIn('needLeaves', mainNodeJson2['nodeInfo'])
-        self.assertEqual(0, mainNodeJson2['nodeInfo']['needLeaves'])
-        self.assertIn('numberLeaves', mainNodeJson2['nodeInfo'])
-        self.assertEqual(4, mainNodeJson2['nodeInfo']['numberLeaves'])
-        self.assertIn('haveTriedLeaves', mainNodeJson2['nodeInfo'])
-        self.assertEqual(0, mainNodeJson2['nodeInfo']['haveTriedLeaves'])
-    
-    def test_get_main_nodes_with_info_3_no_sub_info(self):
-        authHeaders = {
-            'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
-        }
-        user = self.editUser
-        mainNodes = create_two_main_nodes_for_owner(user, parent=self.rootNode)
-        # we now have a three level hierarchy we can test against
-        response = self.client.get('/nodes', headers=authHeaders, 
-                                   content_type='application/json')
-        self.assertEqual(200, response.status_code)
-        self.assertIn('nodeCount', response.json)
-        self.assertEqual(3, response.json['nodeCount'])
-        response = self.client.get('/main/nodes/info/depth/3?ownerId='+str(user.id), headers=authHeaders)
-        self.assertEqual(200, response.status_code)
-        self.assertIn('nodeCount', response.json)
-        self.assertEqual(3, response.json['nodeCount'])
-        self.assertIn('nodes', response.json)
-        mainNodeJson1 = [nodeJson for nodeJson in response.json['nodes'] if nodeJson['name'] == 'node:Main Node, owner:Edit_1'][0]
-        mainNodeJson2 = [nodeJson for nodeJson in response.json['nodes'] if nodeJson['name'] == 'node:Main Node, owner:Edit_2'][0]
-        self.assertIn('nodeInfo', mainNodeJson1)
-        self.assertIn('numberSubs', mainNodeJson1['nodeInfo'])
-        self.assertEqual(0, mainNodeJson1['nodeInfo']['numberSubs'])
-        self.assertIn('averageLeafRating', mainNodeJson1['nodeInfo'])
-        self.assertEqual(None, mainNodeJson1['nodeInfo']['averageLeafRating'])
-        self.assertIn('needLeaves', mainNodeJson1['nodeInfo'])
-        self.assertEqual(0, mainNodeJson1['nodeInfo']['needLeaves'])
-        self.assertIn('numberLeaves', mainNodeJson1['nodeInfo'])
-        self.assertEqual(0, mainNodeJson1['nodeInfo']['numberLeaves'])
-        self.assertIn('haveTriedLeaves', mainNodeJson1['nodeInfo'])
-        self.assertEqual(0, mainNodeJson1['nodeInfo']['haveTriedLeaves'])
-        
-    def test_get_full_tree3_from_main_node(self):
-        authHeaders = {
-            'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
-        }
-        user = self.editUser
-        mainNodes = create_two_main_nodes_for_owner(user, parent=self.rootNode)
-        for mainNode in mainNodes:
-            for subNode in create_two_sub_nodes_for_parent_node(mainNode):
-                create_two_sub_nodes_for_parent_node(subNode)
-        # we now have a three level hierarchy we can test against
-        response = self.client.get('/nodes', headers=authHeaders, 
-                                   content_type='application/json')
-        self.assertEqual(200, response.status_code)
-        self.assertIn('nodeCount', response.json)
-        self.assertEqual(15, response.json['nodeCount'])
-        response = self.client.get('/tree/depth/3/'+str(mainNodes[0].id), headers=authHeaders)
-        self.assertEqual(200, response.status_code)
-        self.assertIn('nodeCount', response.json)
-        self.assertEqual(7, response.json['nodeCount'])
-    
-    def test_get_full_tree3_from_sub_node(self):
-        authHeaders = {
-            'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
-        }
-        user = self.editUser
-        mainNodes = create_two_main_nodes_for_owner(user, parent=self.rootNode)
-        for mainNode in mainNodes:
-            for subNode in create_two_sub_nodes_for_parent_node(mainNode):
-                create_two_sub_nodes_for_parent_node(subNode)
-        # we now have a three level hierarchy we can test against
-        response = self.client.get('/nodes', headers=authHeaders, 
-                                   content_type='application/json')
-        self.assertEqual(200, response.status_code)
-        self.assertIn('nodeCount', response.json)
-        self.assertEqual(15, response.json['nodeCount'])
-        response = self.client.get('/tree/depth/3/'+str(mainNodes[0].children[0].id), headers=authHeaders)
-        self.assertEqual(200, response.status_code)
-        self.assertIn('nodeCount', response.json)
-        self.assertEqual(7, response.json['nodeCount'])
-    
-    def test_get_full_tree3_from_leaf_node(self):
-        authHeaders = {
-            'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
-        }
-        user = self.editUser
-        mainNodes = create_two_main_nodes_for_owner(user, parent=self.rootNode)
-        for mainNode in mainNodes:
-            for subNode in create_two_sub_nodes_for_parent_node(mainNode):
-                create_two_sub_nodes_for_parent_node(subNode)
-        # we now have a three level hierarchy we can test against
-        response = self.client.get('/nodes', headers=authHeaders, 
-                                   content_type='application/json')
-        self.assertEqual(200, response.status_code)
-        self.assertIn('nodeCount', response.json)
-        self.assertEqual(15, response.json['nodeCount'])
-        response = self.client.get('/tree/depth/3/'+str(mainNodes[0].children[0].children[0].id), headers=authHeaders)
-        self.assertEqual(200, response.status_code)
-        self.assertIn('nodeCount', response.json)
-        self.assertEqual(7, response.json['nodeCount'])
-        
-    def test_get_partial_tree3_from_main_node(self):
-        authHeaders = {
-            'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
-        }
-        user = self.editUser
-        mainNodes = create_two_main_nodes_for_owner(user, parent=self.rootNode)
-        for mainNode in mainNodes:
-            create_two_sub_nodes_for_parent_node(mainNode)
-        create_two_sub_nodes_for_parent_node(mainNodes[1].children[0])
-                
-        # we now have a three level hierarchy we can test against
-        response = self.client.get('/nodes', headers=authHeaders, 
-                                   content_type='application/json')
-        self.assertEqual(200, response.status_code)
-        self.assertIn('nodeCount', response.json)
-        self.assertEqual(9, response.json['nodeCount'])
-        response = self.client.get('/tree/depth/3/'+str(mainNodes[0].id), headers=authHeaders)
-        self.assertEqual(200, response.status_code)
-        self.assertIn('nodeCount', response.json)
-        self.assertEqual(3, response.json['nodeCount'])
-            
-    def test_get_partial_tree3_from_sub_node(self):
-        authHeaders = {
-            'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
-        }
-        user = self.editUser
-        mainNodes = create_two_main_nodes_for_owner(user, parent=self.rootNode)
-        for mainNode in mainNodes:
-            create_two_sub_nodes_for_parent_node(mainNode)
-        create_two_sub_nodes_for_parent_node(mainNodes[1].children[0])
-                
-        # we now have a three level hierarchy we can test against
-        response = self.client.get('/nodes', headers=authHeaders, 
-                                   content_type='application/json')
-        self.assertEqual(200, response.status_code)
-        self.assertIn('nodeCount', response.json)
-        self.assertEqual(9, response.json['nodeCount'])
-        response = self.client.get('/tree/depth/3/'+str(mainNodes[0].children[0].id), headers=authHeaders)
-        self.assertEqual(200, response.status_code)
-        self.assertIn('nodeCount', response.json)
-        self.assertEqual(3, response.json['nodeCount'])
-    
-    def test_get_main_nodes_read_access(self):
+    def test_get_level_1_nodes_read_access(self):
         authHeaders = {
             'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
         }
@@ -1462,7 +1577,7 @@ class NodeApiTests(MyThingsTest):
         authHeaders = {
             'Authorization': 'Basic %s' % b64encode(b"Readonly:test").decode("ascii")
         }
-        response = self.client.get('/main/nodes', headers=authHeaders)
+        response = self.client.get('/nodes?level=1', headers=authHeaders)
         self.assertEqual(200, response.status_code)
         self.assertIn('nodeCount', response.json)
         self.assertEqual(3, response.json['nodeCount'])
@@ -1499,8 +1614,32 @@ class NodeApiTests(MyThingsTest):
         with current_app.app_context():
             self.assertEqual(url_for('main.getNodeFromId',nodeId=mainNodeJson2['id'],
                                      _external=True), mainNodeJson2['uri'])
+    
+    def test_get_level_1_nodes_exclude_root_node(self):
+        authHeaders = {
+            'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
+        }
+        data={'name':'MainNode1', 'owner':self.editUser.username, 'type': 'books'}
+        response = self.client.post('/add/node',
+                                 data=json.dumps(data),
+                                 content_type='application/json',
+                                 headers=authHeaders)
+        self.assertEqual(201, response.status_code)
+        data={'name':'MainNode2', 'owner':self.editUser.username, 'type': 'books'}
+        response = self.client.post('/add/node',
+                                 data=json.dumps(data),
+                                 content_type='application/json',
+                                 headers=authHeaders)
+        self.assertEqual(201, response.status_code) 
+        authHeaders = {
+            'Authorization': 'Basic %s' % b64encode(b"Readonly:test").decode("ascii")
+        }
+        response = self.client.get('/nodes?level=1&excludeRoot', headers=authHeaders)
+        self.assertEqual(200, response.status_code)
+        self.assertIn('nodeCount', response.json)
+        self.assertEqual(2, response.json['nodeCount'])
         
-    def test_get_main_nodes_filter_owner(self):
+    def test_get_level_1_nodes_filter_owner(self):
         authHeaders = {
             'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
         }
@@ -1516,7 +1655,7 @@ class NodeApiTests(MyThingsTest):
                                  content_type='application/json',
                                  headers=authHeaders)
         self.assertEqual(201, response.status_code) 
-        response = self.client.get('/main/nodes?ownerId=' + str(self.editUser.id), headers=authHeaders)
+        response = self.client.get('/nodes?ownerId=' + str(self.editUser.id)+'&level=1', headers=authHeaders)
         self.assertEqual(200, response.status_code)
         self.assertIn('nodeCount', response.json)
         self.assertEqual(2, response.json['nodeCount'])
@@ -1538,7 +1677,7 @@ class NodeApiTests(MyThingsTest):
             self.assertEqual(url_for('main.getNodeFromId',nodeId=nodeResponse['id'], 
                                      _external=True), nodeResponse['uri'])
             
-    def test_get_main_nodes_filter_bad_owner(self):
+    def test_get_level_1_nodes_filter_bad_owner(self):
         authHeaders = {
             'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
         }
@@ -1554,12 +1693,12 @@ class NodeApiTests(MyThingsTest):
                                  content_type='application/json',
                                  headers=authHeaders)
         self.assertEqual(201, response.status_code) 
-        response = self.client.get('/main/nodes?ownerId=999', headers=authHeaders)
+        response = self.client.get('/nodes?ownerId=999&level=1', headers=authHeaders)
         self.assertEqual(404, response.status_code)
         self.assertIn('error', response.json)
         self.assertIn('Invalid ownername specified in main/nodes request, so no nodes could be found', response.json['error'])
             
-    def test_get_main_nodes_filter_wrong_owner(self):
+    def test_get_level_1_nodes_filter_wrong_owner(self):
         authHeaders = {
             'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
         }
@@ -1575,12 +1714,12 @@ class NodeApiTests(MyThingsTest):
                                  content_type='application/json',
                                  headers=authHeaders)
         self.assertEqual(201, response.status_code) 
-        response = self.client.get('/main/nodes?ownerId=' + str(self.adminUser.id), headers=authHeaders)
+        response = self.client.get('/nodes?ownerId=' + str(self.adminUser.id)+'&level=1', headers=authHeaders)
         self.assertEqual(200, response.status_code)
         self.assertIn('nodeCount', response.json)
         self.assertEqual(1, response.json['nodeCount'])
             
-    def test_get_main_nodes_filter_type(self):
+    def test_get_level_1_nodes_filter_type(self):
         authHeaders = {
             'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
         }
@@ -1596,7 +1735,7 @@ class NodeApiTests(MyThingsTest):
                                  content_type='application/json',
                                  headers=authHeaders)
         self.assertEqual(201, response.status_code) 
-        response = self.client.get('/main/nodes?type=beer', headers=authHeaders)
+        response = self.client.get('/nodes?type=beer&level=1', headers=authHeaders)
         self.assertEqual(200, response.status_code)
         self.assertIn('nodeCount', response.json)
         self.assertEqual(2, response.json['nodeCount'])
@@ -1620,7 +1759,7 @@ class NodeApiTests(MyThingsTest):
             self.assertEqual(url_for('main.getNodeFromId',nodeId=nodeResponse['id'], 
                                      _external=True), nodeResponse['uri'])
             
-    def test_get_main_nodes_filter_wrong_type(self):
+    def test_get_level_1_nodes_filter_wrong_type(self):
         authHeaders = {
             'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
         }
@@ -1636,12 +1775,12 @@ class NodeApiTests(MyThingsTest):
                                  content_type='application/json',
                                  headers=authHeaders)
         self.assertEqual(201, response.status_code) 
-        response = self.client.get('/main/nodes?type=foo', headers=authHeaders)
+        response = self.client.get('/nodes?type=foo&level=1', headers=authHeaders)
         self.assertEqual(200, response.status_code)
         self.assertIn('nodeCount', response.json)
         self.assertEqual(1, response.json['nodeCount'])
     
-    def test_get_main_nodes_filter_owner_name(self):
+    def test_get_level_1_nodes_filter_owner_name(self):
         authHeaders = {
             'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
         }
@@ -1661,7 +1800,7 @@ class NodeApiTests(MyThingsTest):
                                  content_type='application/json',
                                  headers=authHeaders)
         self.assertEqual(201, response.status_code) 
-        response = self.client.get('/main/nodes?ownerId=' + str(self.editUser.id) + '&name=1', headers=authHeaders)
+        response = self.client.get('/nodes?ownerId=' + str(self.editUser.id) + '&name=1&level=1', headers=authHeaders)
         self.assertEqual(200, response.status_code)
         self.assertIn('nodeCount', response.json)
         self.assertEqual(2, response.json['nodeCount'])
@@ -1683,7 +1822,7 @@ class NodeApiTests(MyThingsTest):
             self.assertEqual(url_for('main.getNodeFromId',nodeId=nodeResponse['id'], 
                                      _external=True), nodeResponse['uri'])
 
-    def test_get_main_nodes_filter_name(self):
+    def test_get_level_1_nodes_filter_name(self):
         authHeaders = {
             'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
         }
@@ -1703,7 +1842,49 @@ class NodeApiTests(MyThingsTest):
                                  content_type='application/json',
                                  headers=authHeaders)
         self.assertEqual(201, response.status_code) 
-        response = self.client.get('/main/nodes?name=1', headers=authHeaders)
+        response = self.client.get('/nodes?name=1&level=1', headers=authHeaders)
+        self.assertEqual(200, response.status_code)
+        self.assertIn('nodeCount', response.json)
+        self.assertEqual(2, response.json['nodeCount'])
+        self.assertIn('nodes', response.json)
+        nodeResponse = response.json['nodes'][0]
+        self.assertIn('name', nodeResponse)
+        self.assertEqual('MainNode1', nodeResponse['name'])
+        self.assertIn('ownerName', nodeResponse)
+        self.assertEqual(self.editUser.username, nodeResponse['ownerName'])
+        self.assertIn('ownerId', nodeResponse)
+        self.assertEqual(self.editUser.id, nodeResponse['ownerId'])
+        self.assertIn('parentName',nodeResponse)
+        self.assertEqual(self.rootNode.name, nodeResponse['parentName'])
+        self.assertIn('parentId', nodeResponse)
+        self.assertEqual(self.rootNode.id, nodeResponse['parentId'])
+        self.assertIn('uri',nodeResponse)
+        self.assertIn('uri',nodeResponse)
+        with current_app.app_context():
+            self.assertEqual(url_for('main.getNodeFromId',nodeId=nodeResponse['id'], 
+                                     _external=True), nodeResponse['uri'])
+    
+    def test_get_nodes_exclude_root_node(self):
+        authHeaders = {
+            'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
+        }
+        data={'name':'MainNode1', 
+              'owner':self.editUser.username, 
+              'type': 'books'}
+        response = self.client.post('/add/node',
+                                 data=json.dumps(data),
+                                 content_type='application/json',
+                                 headers=authHeaders)
+        self.assertEqual(201, response.status_code)
+        data={'name':'MainNode2', 
+              'owner':self.editUser.username,
+              'type': 'books'}
+        response = self.client.post('/add/node',
+                                 data=json.dumps(data),
+                                 content_type='application/json',
+                                 headers=authHeaders)
+        self.assertEqual(201, response.status_code) 
+        response = self.client.get('/nodes?ownerId=' + str(self.editUser.id) + '&excludeRoot', headers=authHeaders)
         self.assertEqual(200, response.status_code)
         self.assertIn('nodeCount', response.json)
         self.assertEqual(2, response.json['nodeCount'])
@@ -2155,7 +2336,7 @@ class NodeApiTests(MyThingsTest):
         self.assertEqual(200, response.status_code)
         self.assertIn('nodeCount', response.json)
         self.assertEqual(15, response.json['nodeCount'])
-        response = self.client.get('/main/nodes', headers=authHeaders, 
+        response = self.client.get('/nodes?level=1', headers=authHeaders, 
                                    content_type='application/json')
         self.assertEqual(200, response.status_code)
         self.assertIn('nodeCount', response.json)
@@ -2187,7 +2368,7 @@ class NodeApiTests(MyThingsTest):
                 for subNode in subNodes:
                     create_two_sub_nodes_for_parent_node(subNode)
         # we now have a three level hierarchy for two different users we can test against
-        response = self.client.get('/main/nodes?ownerId=' + str(users[0].id), headers=authHeaders, 
+        response = self.client.get('/nodes?ownerId=' + str(users[0].id)+'&level=1', headers=authHeaders, 
                                    content_type='application/json')
         self.assertEqual(200, response.status_code)
         self.assertIn('nodeCount', response.json)
@@ -2213,7 +2394,7 @@ class NodeApiTests(MyThingsTest):
         self.assertEqual(200, response.status_code)
         self.assertIn('nodeCount', response.json)
         self.assertEqual(29, response.json['nodeCount'])
-        response = self.client.get('/main/nodes', headers=authHeaders, 
+        response = self.client.get('/nodes?level=1', headers=authHeaders, 
                                    content_type='application/json')
         self.assertEqual(200, response.status_code)
         self.assertIn('nodeCount', response.json)
@@ -2315,7 +2496,7 @@ class NodeApiTests(MyThingsTest):
         self.assertEqual(200, response.status_code)
         self.assertIn('nodeCount', response.json)
         self.assertEqual(29, response.json['nodeCount'])
-        response = self.client.get('/main/nodes', query_string={'ownerId':users[0].id}, 
+        response = self.client.get('/nodes', query_string={'ownerId':users[0].id, 'level': 1}, 
                                    headers=authHeaders, 
                                    content_type='application/json')
         self.assertEqual(200, response.status_code)

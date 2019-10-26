@@ -64,10 +64,11 @@ def verify_password(username, password):
 def unauthorized():
     return make_response(jsonify({'error': 'Unauthorized access'}), 403)
 
-@main_bp.route('/main/nodes', methods=['GET'])
-@auth.login_required
-def getMainNodes():
-    validateUser()
+def getNodesFromLevel(level, excludeRoot=False):
+    """
+    Filter and return nodes from the given level of hierarchy. Include Root node unless
+    excludeRoot is specified.
+    """
     exactFilterBy = {}
     likeFilterBy = {}
     for key,value in iter(request.args.to_dict().items()):
@@ -85,43 +86,20 @@ def getMainNodes():
         ownerQuery = User.query.filter_by(id= exactFilterBy['ownerId'])
         if ownerQuery.count() == 0:
             raise NotFound('Invalid ownername specified in main/nodes request, so no nodes could be found')
-    rootNode = Node.query.filter_by(parent=None).first()
-    exactFilterBy['parentId'] = rootNode.id
-    nodes = Node.query.filter(Node.parent != None).filter_by(**exactFilterBy)
-    for likeKey, likeValue in likeFilterBy.items():
-        if likeKey == 'name':
-            nodes = nodes.filter(Node.name.ilike('%' + likeValue + '%'))
-        if likeKey == 'description':
-            nodes = nodes.filter(Node.description.ilike('%' + likeValue + '%'))
-        if likeKey == 'review':
-            nodes = nodes.filter(Node.review.ilike('%' + likeValue + '%'))
-    nodes = nodes.order_by(orderField).all()
-    nodes.append(rootNode)
-    nodesJson = {'nodes':[]}
-    nodesJson['nodeCount'] = len(nodes)
-    for node in nodes:
-        node.childCount = len(node.children);
-        nodesJson['nodes'].append(node.buildPublicJson())
-    return jsonify(nodesJson)
-
-@main_bp.route('/nodes/depth/3', methods=['GET'])
-@auth.login_required
-def getNodesDepth3():
-    validateUser()
-    exactFilterBy = {}
-    likeFilterBy = {}
-    ownerTypeFilterBy = {}
-    for key,value in iter(request.args.to_dict().items()):
-        if key in Node.validExactSearchFields():
-            exactFilterBy[key] = value
-        if key in Node.validLikeSearchFields():
-            likeFilterBy[key] = value
-    orderField = request.args.get('orderField', 'name')
-    orderDir = request.args.get('orderDir', 'desc')
-    if orderField and orderField not in Node.validOrderByFields():
-        raise BadRequest('orderField is not valid. Valid fields = ' + str(Node.validOrderByFields()))
-    if orderDir.lower() not in ['asc', 'desc']:
-        raise BadRequest('orderBy can only be "asc" or "desc"')
+        
+    if level != 1 and level != 3:
+        raise BadRequest('Retrieving level specific nodes from other than level 3 or 1 is not supported yet.')
+    if level == 1:
+        infoDepth = int(request.args.get('infoDepth', -1))
+        if infoDepth == -1:
+            return getLevel1Nodes(exactFilterBy=exactFilterBy, likeFilterBy=likeFilterBy, orderField=orderField, orderDir=orderDir, excludeRoot=excludeRoot)
+        else:
+            return getLevel1NodesWithInfo(exactFilterBy=exactFilterBy, likeFilterBy=likeFilterBy, orderField=orderField, orderDir=orderDir, excludeRoot=excludeRoot, infoDepth=infoDepth)
+    if level == 3:
+        return getLevel3Nodes(exactFilterBy=exactFilterBy, likeFilterBy=likeFilterBy, orderField=orderField, orderDir=orderDir, excludeRoot=excludeRoot)
+    
+def getLevel3Nodes(exactFilterBy={}, likeFilterBy={}, orderField=None, orderDir=None, excludeRoot=False):
+    ownerTypeFilterBy={}
     if exactFilterBy.get('ownerId', None):
         ownerTypeFilterBy['ownerId'] = exactFilterBy.get('ownerId')
         ownerQuery = User.query.filter_by(id= exactFilterBy['ownerId'])
@@ -145,7 +123,7 @@ def getNodesDepth3():
                   .filter(Node.parentId.in_(db.session.query(Node.id)\
                   .filter_by(**ownerTypeFilterBy)))\
                   .subquery()
-    # get the delth 3 nodes and filter appropriately
+    # get the depth 3 nodes and filter appropriately
     nodes = db.session.query(Node)\
                   .filter(Node.parentId.in_(sub1))\
                   .filter_by(**exactFilterBy)
@@ -157,6 +135,8 @@ def getNodesDepth3():
         if likeKey == 'review':
             nodes = nodes.filter(Node.review.ilike('%' + likeValue + '%'))
     nodes = nodes.all()
+    if not excludeRoot:
+        nodes.append(rootNode)
     nodesJson = {'nodes':[]}
     nodesJson['nodeCount'] = len(nodes)
     for node in nodes:
@@ -164,23 +144,31 @@ def getNodesDepth3():
         nodesJson['nodes'].append(node.buildPublicJson())
     return jsonify(nodesJson)
 
-@main_bp.route('/main/nodes/info/depth/3', methods=['GET'])
-@auth.login_required
-def getMainNodesWithInfo3():
-    validateUser()
-    exactFilterBy = {}
-    likeFilterBy = {}
-    for key,value in iter(request.args.to_dict().items()):
-        if key in Node.validExactSearchFields():
-            exactFilterBy[key] = value
-        if key in Node.validLikeSearchFields():
-            likeFilterBy[key] = value
-    orderField = request.args.get('orderField', 'name')
-    orderDir = request.args.get('orderDir', 'desc')
-    if orderField and orderField not in Node.validOrderByFields():
-        raise BadRequest('orderField is not valid. Valid fields = ' + str(Node.validOrderByFields()))
-    if orderDir.lower() not in ['asc', 'desc']:
-        raise BadRequest('orderBy can only be "asc" or "desc"')
+def getLevel1Nodes(exactFilterBy={}, likeFilterBy={}, orderField=None, orderDir=None, excludeRoot=False):
+    
+    rootNode = Node.query.filter_by(parent=None).first()
+    exactFilterBy['parentId'] = rootNode.id
+    nodes = Node.query.filter(Node.parent != None).filter_by(**exactFilterBy)
+    for likeKey, likeValue in likeFilterBy.items():
+        if likeKey == 'name':
+            nodes = nodes.filter(Node.name.ilike('%' + likeValue + '%'))
+        if likeKey == 'description':
+            nodes = nodes.filter(Node.description.ilike('%' + likeValue + '%'))
+        if likeKey == 'review':
+            nodes = nodes.filter(Node.review.ilike('%' + likeValue + '%'))
+    nodes = nodes.order_by(orderField).all()
+    if(not excludeRoot):
+        nodes.append(rootNode)
+    nodesJson = {'nodes':[]}
+    nodesJson['nodeCount'] = len(nodes)
+    for node in nodes:
+        node.childCount = len(node.children);
+        nodesJson['nodes'].append(node.buildPublicJson())
+    return jsonify(nodesJson)
+
+def getLevel1NodesWithInfo(exactFilterBy={}, likeFilterBy={}, orderField=None, orderDir=None, excludeRoot=False, infoDepth=None):
+    if infoDepth != 3:
+        raise BadRequest('Requesting level 1 nodes with information to a depth other than 3 not supported yet')
     if exactFilterBy.get('ownerId', None):
         ownerQuery = User.query.filter_by(id= exactFilterBy['ownerId'])
         if ownerQuery.count() == 0:
@@ -277,7 +265,8 @@ def getMainNodesWithInfo3():
             nodeInfo['numberSubs'] = 0
         node.nodeInfo = nodeInfo
         nodes.append(node)
-    nodes.append(rootNode)
+    if(not excludeRoot):
+        nodes.append(rootNode)
     db.session.commit()
     nodesJson = {'nodes':[]}
     nodesJson['nodeCount'] = len(nodes)
@@ -286,18 +275,32 @@ def getMainNodesWithInfo3():
         nodesJson['nodes'].append(node.buildPublicJson())
     return jsonify(nodesJson)
 
-@main_bp.route('/tree/depth/3/<string:nodeId>', methods=['GET'])
+@main_bp.route('/tree', methods=['GET'])
 @auth.login_required
-def getTree3WithNode(nodeId=None):
+def getTreeWithNode():
+    """
+    Return the tree starting at the root node that includes the given node to the given depth.
+    If excludeRoot is specified, exclude the root node
+    """
     validateUser()
+    id = request.args.get('id', None)
+    depth = int(request.args.get('depth', -1))
     if id is None:
         raise BadRequest('Request must include the id of a Node')
+    if depth == -1:
+        raise BadRequest('Request must include the desired depth of the tree to retrieve')
+    if depth != 3:
+        raise BadRequest('Retrieving trees of depth not equal to 3 is not currently supported')
+    excludeRoot = 'excludeRoot' in request.args
     rootNode = Node.query.filter_by(parent=None).first()
-    node = Node.query.filter_by(id = nodeId).first()
+    node = Node.query.filter_by(id = id).first()
     mainNode = node
     while mainNode.parent is not rootNode:
         mainNode = mainNode.parent
     nodes = [mainNode]
+    if(not excludeRoot):
+        rootNode = Node.query.filter_by(parent=None).first()
+        nodes.append(rootNode)
     # find all descendants of mainNode and add them to nodes
     for mn in mainNode.children:
         nodes.append(mn)
@@ -313,9 +316,19 @@ def getTree3WithNode(nodeId=None):
 @main_bp.route('/nodes', methods=['GET'])
 @auth.login_required
 def getNodes():
+    """
+    Return all the nodes that satisfy the given filter criteria. Tack on the Root node
+    unless excludeRoot is specified
+    """
+    
+    level = int(request.args.get('level', -1))
+    excludeRoot = 'excludeRoot' in request.args
+    if level > -1:
+        return getNodesFromLevel(level, excludeRoot)
     validateUser()
     exactFilterBy = {}
     likeFilterBy = {}
+    excludeRoot = 'excludeRoot' in request.args
     for key,value in iter(request.args.to_dict().items()):
         if key in Node.validExactSearchFields():
             exactFilterBy[key] = value
@@ -340,8 +353,9 @@ def getNodes():
         if likeKey == 'review':
             nodes = nodes.filter(Node.review.ilike('%' + likeValue + '%'))
     nodes = nodes.order_by(orderField).all()
-    rootNode = Node.query.filter_by(parent=None).first()
-    nodes.append(rootNode)
+    if(not excludeRoot):
+        rootNode = Node.query.filter_by(parent=None).first()
+        nodes.append(rootNode)
     nodesJson = {'nodes':[]}
     nodesJson['nodeCount'] = len(nodes)
     for node in nodes:
@@ -447,6 +461,8 @@ def updateNode(nodeId):
     if not request.json :
         raise BadRequest('No information to update in update/node request')
     node = Node.query.filter_by(id=nodeId).first()
+    if not node:
+        raise NotFound('Node not found')
     try:
         if 'name' in request.json:
             node.name = request.json['name']
