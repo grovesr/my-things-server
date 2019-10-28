@@ -64,7 +64,10 @@ def verify_password(username, password):
 def unauthorized():
     return make_response(jsonify({'error': 'Unauthorized access'}), 403)
 
-def getNodesFromLevel(level=1, limit=-1, excludeRoot=False):
+def getNodesFromLevel(level=1,  
+                      excludeRoot=False,
+                      page=None,
+                      perPage=None):
     """
     Filter and return nodes from the given level of hierarchy. Include Root node unless
     excludeRoot is specified.
@@ -95,31 +98,35 @@ def getNodesFromLevel(level=1, limit=-1, excludeRoot=False):
             return getLevel1Nodes(exactFilterBy=exactFilterBy, 
                                   likeFilterBy=likeFilterBy, 
                                   orderField=orderField, 
-                                  orderDir=orderDir, 
-                                  limit=limit,
-                                  excludeRoot=excludeRoot)
+                                  orderDir=orderDir,
+                                  excludeRoot=excludeRoot,
+                                  page=page,
+                                  perPage=perPage)
         else:
             return getLevel1NodesWithInfo(exactFilterBy=exactFilterBy, 
                                           likeFilterBy=likeFilterBy, 
                                           orderField=orderField, 
                                           orderDir=orderDir, 
-                                          limit=limit,
                                           excludeRoot=excludeRoot, 
-                                          infoDepth=infoDepth)
+                                          infoDepth=infoDepth,
+                                          page=page,
+                                          perPage=perPage)
     if level == 3:
         return getLevel3Nodes(exactFilterBy=exactFilterBy, 
                               likeFilterBy=likeFilterBy, 
                               orderField=orderField, 
                               orderDir=orderDir, 
-                              limit=limit,
-                              excludeRoot=excludeRoot)
+                              excludeRoot=excludeRoot,
+                              page=page,
+                              perPage=perPage)
     
 def getLevel3Nodes(exactFilterBy={}, 
                    likeFilterBy={}, 
                    orderField=None, 
                    orderDir=None, 
-                   limit=-1, 
-                   excludeRoot=False):
+                   excludeRoot=False,
+                   page=None,
+                   perPage=None):
     ownerTypeFilterBy={}
     if exactFilterBy.get('ownerId', None):
         ownerTypeFilterBy['ownerId'] = exactFilterBy.get('ownerId')
@@ -155,14 +162,22 @@ def getLevel3Nodes(exactFilterBy={},
             nodes = nodes.filter(Node.description.ilike('%' + likeValue + '%'))
         if likeKey == 'review':
             nodes = nodes.filter(Node.review.ilike('%' + likeValue + '%'))
-    if limit != -1:
-        nodes = nodes.limit(limit).all()
+    if perPage is None:
+        #paginate
+        perPage = nodes.count()
+        nodePages = nodes.paginate(page=None, per_page=perPage)
     else:
-        nodes = nodes.all()
+        nodePages = nodes.paginate(page=page, per_page=perPage)
+    nodes = nodePages.items
     if not excludeRoot:
         nodes.append(rootNode)
     nodesJson = {'nodes':[]}
     nodesJson['nodeCount'] = len(nodes)
+    nodesJson['totalNodes'] = nodePages.total
+    nodesJson['page'] = nodePages.page
+    nodesJson['perPage'] = nodePages.per_page
+    nodesJson['nextPage'] = nodePages.next_num
+    nodesJson['prevPage'] = nodePages.prev_num
     for node in nodes:
         node.childCount = len(node.children);
         nodesJson['nodes'].append(node.buildPublicJson())
@@ -172,8 +187,9 @@ def getLevel1Nodes(exactFilterBy={},
                    likeFilterBy={}, 
                    orderField=None, 
                    orderDir=None, 
-                   limit=-1,
-                   excludeRoot=False):
+                   excludeRoot=False,
+                   page=None,
+                   perPage=None):
     
     rootNode = Node.query.filter_by(parent=None).first()
     exactFilterBy['parentId'] = rootNode.id
@@ -186,14 +202,22 @@ def getLevel1Nodes(exactFilterBy={},
         if likeKey == 'review':
             nodes = nodes.filter(Node.review.ilike('%' + likeValue + '%'))
     nodes = nodes.order_by(orderField)
-    if limit != -1:
-        nodes = nodes.limit(limit).all()
+    if perPage is None:
+        #paginate
+        perPage = nodes.count()
+        nodePages = nodes.paginate(page=None, per_page=perPage)
     else:
-        nodes = nodes.all()
+        nodePages = nodes.paginate(page=page, per_page=perPage)
+    nodes = nodePages.items
     if(not excludeRoot):
         nodes.append(rootNode)
     nodesJson = {'nodes':[]}
     nodesJson['nodeCount'] = len(nodes)
+    nodesJson['totalNodes'] = nodePages.total
+    nodesJson['page'] = nodePages.page
+    nodesJson['perPage'] = nodePages.per_page
+    nodesJson['nextPage'] = nodePages.next_num
+    nodesJson['prevPage'] = nodePages.prev_num
     for node in nodes:
         node.childCount = len(node.children);
         nodesJson['nodes'].append(node.buildPublicJson())
@@ -203,9 +227,10 @@ def getLevel1NodesWithInfo(exactFilterBy={},
                            likeFilterBy={}, 
                            orderField=None, 
                            orderDir=None, 
-                           limit=-1,
                            excludeRoot=False, 
-                           infoDepth=None):
+                           infoDepth=None,
+                           page=None,
+                           perPage=None):
     if infoDepth != 3:
         raise BadRequest('Requesting level 1 nodes with information to a depth other than 3 not supported yet')
     if exactFilterBy.get('ownerId', None):
@@ -274,10 +299,13 @@ def getLevel1NodesWithInfo(exactFilterBy={},
                                select([func.sum(asub2.c.haveTriedChildren)]).where(asub2.c.parentId==main1WithNumSubs.c.id).label('haveTriedLeaves'),
                                select([func.sum(asub2.c.numberChildren)]).where(asub2.c.parentId==main1WithNumSubs.c.id).label('numberLeaves'))\
                    .distinct()
-    if limit != -1:
-        rows = rows.limit(limit).all()
+    if perPage is None:
+        #paginate
+        perPage = rows.count()
+        rowPages = rows.paginate(page=None, per_page=perPage)
     else:
-        rows = rows.all()
+        rowPages = rows.paginate(page=page, per_page=perPage)
+    rows = rowPages.items
     nodes = []
     for row in rows:
         rowDict = row._asdict()
@@ -312,6 +340,11 @@ def getLevel1NodesWithInfo(exactFilterBy={},
     db.session.commit()
     nodesJson = {'nodes':[]}
     nodesJson['nodeCount'] = len(nodes)
+    nodesJson['totalNodes'] = rowPages.total
+    nodesJson['page'] = rowPages.page
+    nodesJson['perPage'] = rowPages.per_page
+    nodesJson['nextPage'] = rowPages.next_num
+    nodesJson['prevPage'] = rowPages.prev_num
     for node in nodes:
         node.childCount = len(node.children);
         nodesJson['nodes'].append(node.buildPublicJson())
@@ -364,18 +397,31 @@ def getNodes():
     """
     
     level = int(request.args.get('level', -1))
-    if 'limit' in request.args:
+    if 'perPage' in request.args:
         try:
-            limit = int(request.args.get('limit', ''))
+            perPage = int(request.args.get('perPage', ''))
         except ValueError as e:
-            raise BadRequest('limit argument must be numeric')
-        if limit <= 0:
-            raise BadRequest('limit argument must be greater than 0')
+            raise BadRequest('perPage argument must be numeric')
+        if perPage <= 0:
+            raise BadRequest('perPage argument must be greater than 0')
     else:
-        limit = -1    
+        perPage = None
+    if 'page' in request.args:
+        try:
+            page = int(request.args.get('page', ''))
+        except ValueError as e:
+            raise BadRequest('page argument must be numeric')
+        if page <= 0:
+            raise BadRequest('page argument must be greater than 0')
+    else:
+        page = None
+        
     excludeRoot = 'excludeRoot' in request.args
     if level > -1:
-        return getNodesFromLevel(level=level, limit=limit, excludeRoot=excludeRoot)
+        return getNodesFromLevel(level=level, 
+                                 excludeRoot=excludeRoot,
+                                 page=page,
+                                 perPage=perPage)
     validateUser()
     exactFilterBy = {}
     likeFilterBy = {}
@@ -404,15 +450,23 @@ def getNodes():
         if likeKey == 'review':
             nodes = nodes.filter(Node.review.ilike('%' + likeValue + '%'))
     nodes = nodes.order_by(orderField)
-    if limit != -1:
-        nodes = nodes.limit(limit).all()
+    if perPage is None:
+        #paginate
+        perPage = nodes.count()
+        nodePages = nodes.paginate(page=None, per_page=perPage)
     else:
-        nodes = nodes.all()    
+        nodePages = nodes.paginate(page=page, per_page=perPage)
+    nodes = nodePages.items
     if(not excludeRoot):
         rootNode = Node.query.filter_by(parent=None).first()
         nodes.append(rootNode)
     nodesJson = {'nodes':[]}
     nodesJson['nodeCount'] = len(nodes)
+    nodesJson['totalNodes'] = nodePages.total
+    nodesJson['page'] = nodePages.page
+    nodesJson['perPage'] = nodePages.per_page
+    nodesJson['nextPage'] = nodePages.next_num
+    nodesJson['prevPage'] = nodePages.prev_num
     for node in nodes:
         node.childCount = len(node.children);
         nodesJson['nodes'].append(node.buildPublicJson())

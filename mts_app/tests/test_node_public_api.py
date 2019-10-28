@@ -1125,7 +1125,7 @@ class NodeApiTests(MyThingsTest):
         self.assertIn('nodeCount', response.json)
         self.assertEqual(4, response.json['nodeCount'])
         
-    def test_get_level_3_nodes_limit_5(self):
+    def test_get_level_3_nodes_per_page_5_page_2(self):
         authHeaders = {
             'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
         }
@@ -1133,18 +1133,24 @@ class NodeApiTests(MyThingsTest):
         mainNodes = create_two_main_nodes_for_owner(user, parent=self.rootNode, type='books')
         for mainNode in mainNodes:
             for subNode in create_two_sub_nodes_for_parent_node(mainNode):
-                leaves = create_two_sub_nodes_for_parent_node(subNode)
-                leaves[0].description = 'This a first description'
-                db.session.add(leaves[0])
-                leaves[1].description = 'This is a second description'
-                db.session.add(leaves[1])
-                db.session.commit()
+                create_two_sub_nodes_for_parent_node(subNode)
         # we now have a three level hierarchy we can test against
-        response = self.client.get('/nodes?limit=5&excludeRoot', headers=authHeaders, 
+        response = self.client.get('/nodes?ownerId='+str(user.id)+'&type=books&level=3&perPage=5&page=2&excludeRoot', headers=authHeaders, 
                                    content_type='application/json')
         self.assertEqual(200, response.status_code)
         self.assertIn('nodeCount', response.json)
-        self.assertEqual(5, response.json['nodeCount'])
+        self.assertEqual(3, response.json['nodeCount'])
+        self.assertIn('page', response.json)
+        self.assertEqual(2, response.json['page'])
+        self.assertIn('perPage', response.json)
+        self.assertEqual(5, response.json['perPage'])
+        self.assertIn('totalNodes', response.json)
+        self.assertEqual(8, response.json['totalNodes'])
+        self.assertIn('prevPage', response.json)
+        self.assertEqual(1, response.json['prevPage'])
+        self.assertIn('nextPage', response.json)
+        self.assertEqual(None, response.json['nextPage'])
+        
         
     def test_get_level_3_nodes_filter_description_include_root_node(self):
         authHeaders = {
@@ -1659,6 +1665,72 @@ class NodeApiTests(MyThingsTest):
         self.assertEqual(200, response.status_code)
         self.assertIn('nodeCount', response.json)
         self.assertEqual(2, response.json['nodeCount'])
+    
+    def test_get_nodes_per_page_10_page_10(self):
+        authHeaders = {
+            'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
+        }
+        rootNode = Node.query.filter_by(parent=None).first()
+        for k in range(100):
+            create_node_for_owner_with_index(self.editUser, k, rootNode, 'books')
+        response = self.client.get('/nodes?ownerId=' + str(self.editUser.id)+'&excludeRoot&perPage=10&page=10', headers=authHeaders)
+        self.assertEqual(200, response.status_code)
+        self.assertIn('nodeCount', response.json)
+        self.assertEqual(10, response.json['nodeCount'])
+        self.assertIn('page', response.json)
+        self.assertEqual(10, response.json['page'])
+        self.assertIn('perPage', response.json)
+        self.assertEqual(10, response.json['perPage'])
+        self.assertIn('prevPage', response.json)
+        self.assertEqual(9, response.json['prevPage'])
+        self.assertIn('nextPage', response.json)
+        self.assertEqual(None, response.json['nextPage'])
+        self.assertIn('totalNodes', response.json)
+        self.assertEqual(100, response.json['totalNodes'])
+        
+    def test_get_level_1_nodes_per_page_10_page_10(self):
+        authHeaders = {
+            'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
+        }
+        rootNode = Node.query.filter_by(parent=None).first()
+        for k in range(100):
+            create_node_for_owner_with_index(self.editUser, k, rootNode, 'books')
+        response = self.client.get('/nodes?ownerId=' + str(self.editUser.id)+'&level=1&excludeRoot&perPage=10&page=10', headers=authHeaders)
+        self.assertEqual(200, response.status_code)
+        self.assertIn('nodeCount', response.json)
+        self.assertEqual(10, response.json['nodeCount'])
+        self.assertIn('page', response.json)
+        self.assertEqual(10, response.json['page'])
+        self.assertIn('perPage', response.json)
+        self.assertEqual(10, response.json['perPage'])
+        self.assertIn('prevPage', response.json)
+        self.assertEqual(9, response.json['prevPage'])
+        self.assertIn('nextPage', response.json)
+        self.assertEqual(None, response.json['nextPage'])
+        self.assertIn('totalNodes', response.json)
+        self.assertEqual(100, response.json['totalNodes'])
+    
+    def test_get_level_1_nodes_info_depth_3_per_page_10_page_10(self):
+        authHeaders = {
+            'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
+        }
+        rootNode = Node.query.filter_by(parent=None).first()
+        for k in range(100):
+            create_node_for_owner_with_index(self.editUser, k, rootNode, 'books')
+        response = self.client.get('/nodes?ownerId=' + str(self.editUser.id)+'&level=1&infoDepth=3&excludeRoot&perPage=10&page=10', headers=authHeaders)
+        self.assertEqual(200, response.status_code)
+        self.assertIn('nodeCount', response.json)
+        self.assertEqual(10, response.json['nodeCount'])
+        self.assertIn('page', response.json)
+        self.assertEqual(10, response.json['page'])
+        self.assertIn('perPage', response.json)
+        self.assertEqual(10, response.json['perPage'])
+        self.assertIn('prevPage', response.json)
+        self.assertEqual(9, response.json['prevPage'])
+        self.assertIn('nextPage', response.json)
+        self.assertEqual(None, response.json['nextPage'])
+        self.assertIn('totalNodes', response.json)
+        self.assertEqual(100, response.json['totalNodes'])
         
     def test_get_level_1_nodes_filter_owner(self):
         authHeaders = {
@@ -1885,7 +1957,7 @@ class NodeApiTests(MyThingsTest):
             self.assertEqual(url_for('main.getNodeFromId',nodeId=nodeResponse['id'], 
                                      _external=True), nodeResponse['uri'])
             
-    def test_get_level_1_nodes_limit_1(self):
+    def test_get_level_1_nodes_per_page_1(self):
         authHeaders = {
             'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
         }
@@ -1905,12 +1977,12 @@ class NodeApiTests(MyThingsTest):
                                  content_type='application/json',
                                  headers=authHeaders)
         self.assertEqual(201, response.status_code) 
-        response = self.client.get('/nodes?level=1&limit=1&excludeRoot', headers=authHeaders)
+        response = self.client.get('/nodes?level=1&perPage=1&excludeRoot', headers=authHeaders)
         self.assertEqual(200, response.status_code)
         self.assertIn('nodeCount', response.json)
         self.assertEqual(1, response.json['nodeCount'])
     
-    def test_get_nodes_non_numeric_limit(self):
+    def test_get_nodes_non_numeric_per_page(self):
         authHeaders = {
             'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
         }
@@ -1930,12 +2002,12 @@ class NodeApiTests(MyThingsTest):
                                  content_type='application/json',
                                  headers=authHeaders)
         self.assertEqual(201, response.status_code) 
-        response = self.client.get('/nodes?ownerId=' + str(self.editUser.id) + '&limit=foo', headers=authHeaders)
+        response = self.client.get('/nodes?ownerId=' + str(self.editUser.id) + '&perPage=foo', headers=authHeaders)
         self.assertEqual(400, response.status_code)
         self.assertIn('error', response.json)
-        self.assertIn('limit argument must be numeric', response.json['error'])
+        self.assertIn('perPage argument must be numeric', response.json['error'])
     
-    def test_get_nodes_negative_limit(self):
+    def test_get_nodes_negative_per_page(self):
         authHeaders = {
             'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
         }
@@ -1955,12 +2027,12 @@ class NodeApiTests(MyThingsTest):
                                  content_type='application/json',
                                  headers=authHeaders)
         self.assertEqual(201, response.status_code) 
-        response = self.client.get('/nodes?ownerId=' + str(self.editUser.id) + '&limit=-1', headers=authHeaders)
+        response = self.client.get('/nodes?ownerId=' + str(self.editUser.id) + '&perPage=-1', headers=authHeaders)
         self.assertEqual(400, response.status_code)
         self.assertIn('error', response.json)
-        self.assertIn('limit argument must be greater than 0', response.json['error'])
+        self.assertIn('perPage argument must be greater than 0', response.json['error'])
         
-    def test_get_nodes_zero_limit(self):
+    def test_get_nodes_zero_per_page(self):
         authHeaders = {
             'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
         }
@@ -1980,10 +2052,10 @@ class NodeApiTests(MyThingsTest):
                                  content_type='application/json',
                                  headers=authHeaders)
         self.assertEqual(201, response.status_code) 
-        response = self.client.get('/nodes?ownerId=' + str(self.editUser.id) + '&limit=0', headers=authHeaders)
+        response = self.client.get('/nodes?ownerId=' + str(self.editUser.id) + '&perPage=0', headers=authHeaders)
         self.assertEqual(400, response.status_code)
         self.assertIn('error', response.json)
-        self.assertIn('limit argument must be greater than 0', response.json['error'])
+        self.assertIn('perPage argument must be greater than 0', response.json['error'])
     
     def test_get_nodes_filter_owner_name(self):
         authHeaders = {
@@ -2027,7 +2099,7 @@ class NodeApiTests(MyThingsTest):
             self.assertEqual(url_for('main.getNodeFromId',nodeId=nodeResponse['id'], 
                                      _external=True), nodeResponse['uri'])
     
-    def test_get_nodes_limit_1(self):
+    def test_get_nodes_per_page_1(self):
         authHeaders = {
             'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
         }
@@ -2047,7 +2119,7 @@ class NodeApiTests(MyThingsTest):
                                  content_type='application/json',
                                  headers=authHeaders)
         self.assertEqual(201, response.status_code) 
-        response = self.client.get('/nodes?limit=1&excludeRoot', headers=authHeaders)
+        response = self.client.get('/nodes?perPage=1&excludeRoot', headers=authHeaders)
         self.assertEqual(200, response.status_code)
         self.assertIn('nodeCount', response.json)
         self.assertEqual(1, response.json['nodeCount'])
