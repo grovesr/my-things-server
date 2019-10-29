@@ -162,6 +162,8 @@ def getLevel3Nodes(exactFilterBy={},
             nodes = nodes.filter(Node.description.ilike('%' + likeValue + '%'))
         if likeKey == 'review':
             nodes = nodes.filter(Node.review.ilike('%' + likeValue + '%'))
+    if orderField is not None:
+        nodes = nodes.order_by(orderField)
     if perPage is None:
         #paginate
         perPage = nodes.count()
@@ -202,7 +204,8 @@ def getLevel1Nodes(exactFilterBy={},
             nodes = nodes.filter(Node.description.ilike('%' + likeValue + '%'))
         if likeKey == 'review':
             nodes = nodes.filter(Node.review.ilike('%' + likeValue + '%'))
-    nodes = nodes.order_by(orderField)
+    if orderField is not None:
+        nodes = nodes.order_by(orderField)
     if perPage is None:
         #paginate
         perPage = nodes.count()
@@ -301,6 +304,8 @@ def getLevel1NodesWithInfo(exactFilterBy={},
                                select([func.sum(asub2.c.haveTriedChildren)]).where(asub2.c.parentId==main1WithNumSubs.c.id).label('haveTriedLeaves'),
                                select([func.sum(asub2.c.numberChildren)]).where(asub2.c.parentId==main1WithNumSubs.c.id).label('numberLeaves'))\
                    .distinct()
+    if orderField is not None:
+        rows = rows.order_by(orderField)
     if perPage is None:
         #paginate
         perPage = rows.count()
