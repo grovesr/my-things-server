@@ -25,6 +25,8 @@ from werkzeug.security import check_password_hash
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.sql.expression import literal
 from sqlalchemy.sql.expression import select
+from sqlalchemy import desc
+from sqlalchemy import asc
 from sqlalchemy.sql import func
 from sqlalchemy import and_
 from dateutil.parser import parse
@@ -80,8 +82,13 @@ def getNodesFromLevel(level=1,
         if key in Node.validLikeSearchFields():
             likeFilterBy[key] = value
     orderField = request.args.get('orderField', 'name')
-    orderDir = request.args.get('orderDir', 'desc')
-    if orderField and orderField not in Node.validOrderByFields():
+    orderDir = request.args.get('orderDir', 'asc')
+    validOrderFields = Node.validOrderByFields()
+    if level==1:
+        infoDepth = int(request.args.get('infoDepth', -1))
+        if infoDepth == 3:
+            validOrderFields.append('averageLeafRating')
+    if orderField and orderField not in validOrderFields:
         raise BadRequest('orderField is not valid. Valid fields = ' + str(Node.validOrderByFields()))
     if orderDir.lower() not in ['asc', 'desc']:
         raise BadRequest('orderBy can only be "asc" or "desc"')
@@ -93,7 +100,6 @@ def getNodesFromLevel(level=1,
     if level != 1 and level != 3:
         raise BadRequest('Retrieving level specific nodes from other than level 3 or 1 is not supported yet.')
     if level == 1:
-        infoDepth = int(request.args.get('infoDepth', -1))
         if infoDepth == -1:
             return getLevel1Nodes(exactFilterBy=exactFilterBy, 
                                   likeFilterBy=likeFilterBy, 
@@ -162,8 +168,10 @@ def getLevel3Nodes(exactFilterBy={},
             nodes = nodes.filter(Node.description.ilike('%' + likeValue + '%'))
         if likeKey == 'review':
             nodes = nodes.filter(Node.review.ilike('%' + likeValue + '%'))
-    if orderField is not None:
-        nodes = nodes.order_by(orderField)
+    if orderDir == 'asc':
+        nodes = nodes.order_by(asc(orderField))
+    if orderDir == 'desc':
+        nodes = nodes.order_by(desc(orderField))
     if perPage is None:
         #paginate
         perPage = nodes.count()
@@ -204,8 +212,10 @@ def getLevel1Nodes(exactFilterBy={},
             nodes = nodes.filter(Node.description.ilike('%' + likeValue + '%'))
         if likeKey == 'review':
             nodes = nodes.filter(Node.review.ilike('%' + likeValue + '%'))
-    if orderField is not None:
-        nodes = nodes.order_by(orderField)
+    if orderDir == 'asc':
+        nodes = nodes.order_by(asc(orderField))
+    if orderDir == 'desc':
+        nodes = nodes.order_by(desc(orderField))
     if perPage is None:
         #paginate
         perPage = nodes.count()
@@ -288,6 +298,11 @@ def getLevel1NodesWithInfo(exactFilterBy={},
             main1 = main1.filter(Node.description.ilike('%' + likeValue + '%'))
         if likeKey == 'review':
             main1 = main1.filter(Node.review.ilike('%' + likeValue + '%'))
+    if orderField != 'averageLeafRating':
+        if orderDir == 'asc':
+            main1 = main1.order_by(asc(orderField))
+        if orderDir == 'desc':
+            main1 = main1.order_by(desc(orderField))
     main1 = main1.subquery()
     asub2  = aliased(sub2)
     asub1=aliased(sub1)
@@ -304,8 +319,11 @@ def getLevel1NodesWithInfo(exactFilterBy={},
                                select([func.sum(asub2.c.haveTriedChildren)]).where(asub2.c.parentId==main1WithNumSubs.c.id).label('haveTriedLeaves'),
                                select([func.sum(asub2.c.numberChildren)]).where(asub2.c.parentId==main1WithNumSubs.c.id).label('numberLeaves'))\
                    .distinct()
-    if orderField is not None:
-        rows = rows.order_by(orderField)
+    if orderField == 'averageLeafRating':
+        if orderDir == 'asc':
+            rows = rows.order_by(asc(orderField))
+        if orderDir == 'desc':
+            rows = rows.order_by(desc(orderField))
     if perPage is None:
         #paginate
         perPage = rows.count()
@@ -440,7 +458,7 @@ def getNodes():
         if key in Node.validLikeSearchFields():
             likeFilterBy[key] = value
     orderField = request.args.get('orderField', 'name')
-    orderDir = request.args.get('orderDir', 'desc')
+    orderDir = request.args.get('orderDir', 'asc')
     if orderField and orderField not in Node.validOrderByFields():
         raise BadRequest('orderField is not valid. Valid fields = ' + str(Node.validOrderByFields()))
     if orderDir.lower() not in ['asc', 'desc']:
@@ -457,7 +475,10 @@ def getNodes():
             nodes = nodes.filter(Node.description.ilike('%' + likeValue + '%'))
         if likeKey == 'review':
             nodes = nodes.filter(Node.review.ilike('%' + likeValue + '%'))
-    nodes = nodes.order_by(orderField)
+    if orderDir == 'asc':
+        nodes = nodes.order_by(asc(orderField))
+    if orderDir == 'desc':
+        nodes = nodes.order_by(desc(orderField))
     if perPage is None:
         #paginate
         perPage = nodes.count()
