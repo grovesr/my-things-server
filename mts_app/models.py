@@ -174,7 +174,8 @@ class Node(db.Model):
     def validOrderByFields(self):
         return ['name',
                 'type',
-                'rating']
+                'rating',
+                'dateTried']
     
     def buildJson(self):
         if self.dateTried is None:

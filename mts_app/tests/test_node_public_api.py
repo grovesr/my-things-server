@@ -17,7 +17,7 @@ from flask.helpers import url_for
 import json
 from werkzeug.exceptions import BadRequest, HTTPException
 from mts_app.admin.routes import auth
-from dateutil.parser import parser
+from datetime import datetime
 
 authHeaders = {
     'Authorization': 'Basic %s' % b64encode(b"Admin:test").decode("ascii")
@@ -1152,6 +1152,74 @@ class NodeApiTests(MyThingsTest):
         self.assertEqual(1, response.json['prevPage'])
         self.assertIn('nextPage', response.json)
         self.assertEqual(None, response.json['nextPage'])
+        
+    def test_get_level_3_nodes_order_by_date_tried_asc(self):
+        authHeaders = {
+            'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
+        }
+        user = self.editUser
+        dayTried = 0
+        mainNodes = create_two_main_nodes_for_owner(user, parent=self.rootNode, type='books')
+        for mainNode in mainNodes:
+            for subNode in create_two_sub_nodes_for_parent_node(mainNode):
+                leaves = create_two_sub_nodes_for_parent_node(subNode)
+                dayTried += 1
+                dateTried = '2019/10/' + str(dayTried).zfill(2)
+                leaves[0].dateTried = datetime.strptime(dateTried, '%Y/%m/%d')
+                db.session.add(leaves[0])
+                dayTried += 1
+                dateTried = '2019/10/' + str(dayTried).zfill(2)
+                leaves[1].dateTried = datetime.strptime(dateTried, '%Y/%m/%d')
+                db.session.add(leaves[1])
+                db.session.commit()
+        # we now have a three level hierarchy we can test against
+        response = self.client.get('/nodes', headers=authHeaders, 
+                                   content_type='application/json')
+        self.assertEqual(200, response.status_code)
+        self.assertIn('nodeCount', response.json)
+        self.assertEqual(15, response.json['nodeCount'])
+        response = self.client.get('/nodes?excludeRoot&level=3&orderField=dateTried&orderDir=asc&ownerId='+str(user.id)+'&type=books', headers=authHeaders)
+        self.assertEqual(200, response.status_code)
+        self.assertIn('nodeCount', response.json)
+        self.assertEqual(8, response.json['nodeCount'])
+        self.assertIn('nodes', response.json)
+        node8 = response.json['nodes'][7]
+        self.assertIn('dateTried', node8)
+        self.assertEqual('2019/10/08', node8['dateTried'])
+        
+    def test_get_level_3_nodes_order_by_date_tried_desc(self):
+        authHeaders = {
+            'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
+        }
+        user = self.editUser
+        dayTried = 0
+        mainNodes = create_two_main_nodes_for_owner(user, parent=self.rootNode, type='books')
+        for mainNode in mainNodes:
+            for subNode in create_two_sub_nodes_for_parent_node(mainNode):
+                leaves = create_two_sub_nodes_for_parent_node(subNode)
+                dayTried += 1
+                dateTried = '2019/10/' + str(dayTried).zfill(2)
+                leaves[0].dateTried = datetime.strptime(dateTried, '%Y/%m/%d')
+                db.session.add(leaves[0])
+                dayTried += 1
+                dateTried = '2019/10/' + str(dayTried).zfill(2)
+                leaves[1].dateTried = datetime.strptime(dateTried, '%Y/%m/%d')
+                db.session.add(leaves[1])
+                db.session.commit()
+        # we now have a three level hierarchy we can test against
+        response = self.client.get('/nodes', headers=authHeaders, 
+                                   content_type='application/json')
+        self.assertEqual(200, response.status_code)
+        self.assertIn('nodeCount', response.json)
+        self.assertEqual(15, response.json['nodeCount'])
+        response = self.client.get('/nodes?excludeRoot&level=3&orderField=dateTried&orderDir=desc&ownerId='+str(user.id)+'&type=books', headers=authHeaders)
+        self.assertEqual(200, response.status_code)
+        self.assertIn('nodeCount', response.json)
+        self.assertEqual(8, response.json['nodeCount'])
+        self.assertIn('nodes', response.json)
+        node8 = response.json['nodes'][7]
+        self.assertIn('dateTried', node8)
+        self.assertEqual('2019/10/01', node8['dateTried'])
         
         
     def test_get_level_3_nodes_filter_description_include_root_node(self):
