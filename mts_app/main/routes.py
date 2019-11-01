@@ -169,9 +169,9 @@ def getLevel3Nodes(exactFilterBy={},
         if likeKey == 'review':
             nodes = nodes.filter(Node.review.ilike('%' + likeValue + '%'))
     if orderDir == 'asc':
-        nodes = nodes.order_by(asc(orderField))
+        nodes = nodes.filter(getattr(Node, orderField)!=None).order_by(asc(orderField))
     if orderDir == 'desc':
-        nodes = nodes.order_by(desc(orderField))
+        nodes = nodes.filter(getattr(Node, orderField)!=None).order_by(desc(orderField))
     if perPage is None:
         #paginate
         perPage = nodes.count()
