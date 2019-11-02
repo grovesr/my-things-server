@@ -213,9 +213,9 @@ def getLevel1Nodes(exactFilterBy={},
         if likeKey == 'review':
             nodes = nodes.filter(Node.review.ilike('%' + likeValue + '%'))
     if orderDir == 'asc':
-        nodes = nodes.order_by(asc(orderField))
+        nodes = nodes.filter(getattr(Node, orderField)!=None).order_by(asc(orderField))
     if orderDir == 'desc':
-        nodes = nodes.order_by(desc(orderField))
+        nodes = nodes.filter(getattr(Node, orderField)!=None).order_by(desc(orderField))
     if perPage is None:
         #paginate
         perPage = nodes.count()
@@ -312,18 +312,21 @@ def getLevel1NodesWithInfo(exactFilterBy={},
                   .distinct()\
                   .subquery()
     # outer join sub nodes to main nodes on sub.parentId=main.id
-    rows = db.session.query(main1WithNumSubs)\
+    rowssq = db.session.query(main1WithNumSubs)\
                   .outerjoin(sub2, main1WithNumSubs.c.id==sub2.c.parentId)\
                   .add_columns(select([func.round(func.avg(asub2.c.averageRating))]).where(asub2.c.parentId==main1WithNumSubs.c.id).label('averageLeafRating'),
                                select([func.sum(asub2.c.needChildren)]).where(asub2.c.parentId==main1WithNumSubs.c.id).label('needLeaves'),
                                select([func.sum(asub2.c.haveTriedChildren)]).where(asub2.c.parentId==main1WithNumSubs.c.id).label('haveTriedLeaves'),
                                select([func.sum(asub2.c.numberChildren)]).where(asub2.c.parentId==main1WithNumSubs.c.id).label('numberLeaves'))\
-                   .distinct()
+                   .distinct()\
+                   .subquery()
     if orderField == 'averageLeafRating':
         if orderDir == 'asc':
-            rows = rows.order_by(asc(orderField))
+            rows = db.session.query(rowssq).filter(getattr(rowssq.c, orderField)!=None).order_by(asc(orderField))
         if orderDir == 'desc':
-            rows = rows.order_by(desc(orderField))
+            rows = db.session.query(rowssq).filter(getattr(rowssq.c, orderField)!=None).order_by(desc(orderField))
+    else:
+        rows = db.session.query(rowssq)
     if perPage is None:
         #paginate
         perPage = rows.count()
@@ -476,9 +479,9 @@ def getNodes():
         if likeKey == 'review':
             nodes = nodes.filter(Node.review.ilike('%' + likeValue + '%'))
     if orderDir == 'asc':
-        nodes = nodes.order_by(asc(orderField))
+        nodes = nodes.filter(getattr(Node, orderField)!=None).order_by(asc(orderField))
     if orderDir == 'desc':
-        nodes = nodes.order_by(desc(orderField))
+        nodes = nodes.filter(getattr(Node, orderField)!=None).order_by(desc(orderField))
     if perPage is None:
         #paginate
         perPage = nodes.count()

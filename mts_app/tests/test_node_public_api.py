@@ -1397,8 +1397,113 @@ class NodeApiTests(MyThingsTest):
         self.assertIn('nodeInfo', mainNodeJson1)
         self.assertIn('numberSubs', mainNodeJson1['nodeInfo'])
         self.assertEqual(2, mainNodeJson1['nodeInfo']['numberSubs'])
+    
+    def test_get_level_1_nodes_with_info_depth_3_order_by_average_leaf_rating_with_no_average_desc(self):
+        authHeaders = {
+            'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
+        }
+        user = self.editUser
+        mainNodes = []
+        for k in range(3):
+            mainNodes.append(create_node_for_owner_with_index(owner=user, parent=self.rootNode, nodeIndex=k+1))
+        leafRating = 0
+        need = False
+        haveTried = False
+        for mainNode in mainNodes:
+            need = not(need)
+            haveTried = not(haveTried)
+            subNodes = create_two_sub_nodes_for_parent_node(mainNode)
+            for subNode in subNodes:
+                for leaf in create_two_sub_nodes_for_parent_node(subNode):
+                    if leafRating < 8:
+                        leafRating += 1
+                        leaf.rating = leafRating
+                        leaf.need = need
+                        leaf.haveTried = haveTried
+        db.session.commit()
+        # we now have a three level hierarchy we can test against
+        response = self.client.get('/nodes', headers=authHeaders, 
+                                   content_type='application/json')
+        self.assertEqual(200, response.status_code)
+        self.assertIn('nodeCount', response.json)
+        self.assertEqual(22, response.json['nodeCount'])
+        response = self.client.get('/nodes?ownerId='+str(user.id)+'&level=1&infoDepth=3&orderField=averageLeafRating&orderDir=desc&excludeRoot', headers=authHeaders)
+        self.assertEqual(200, response.status_code)
+        self.assertIn('nodeCount', response.json)
+        self.assertEqual(2, response.json['nodeCount'])
+        self.assertIn('nodes', response.json)
+        self.assertEqual(7, response.json['nodes'][0]['nodeInfo']['averageLeafRating'])
+        
+    def test_get_level_1_nodes_with_info_depth_3_order_by_average_leaf_rating_with_no_average_asc(self):
+        authHeaders = {
+            'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
+        }
+        user = self.editUser
+        mainNodes = []
+        for k in range(3):
+            mainNodes.append(create_node_for_owner_with_index(owner=user, parent=self.rootNode, nodeIndex=k+1))
+        leafRating = 0
+        need = False
+        haveTried = False
+        for mainNode in mainNodes:
+            need = not(need)
+            haveTried = not(haveTried)
+            subNodes = create_two_sub_nodes_for_parent_node(mainNode)
+            for subNode in subNodes:
+                for leaf in create_two_sub_nodes_for_parent_node(subNode):
+                    if leafRating < 8:
+                        leafRating += 1
+                        leaf.rating = leafRating
+                        leaf.need = need
+                        leaf.haveTried = haveTried
+        db.session.commit()
+        # we now have a three level hierarchy we can test against
+        response = self.client.get('/nodes', headers=authHeaders, 
+                                   content_type='application/json')
+        self.assertEqual(200, response.status_code)
+        self.assertIn('nodeCount', response.json)
+        self.assertEqual(22, response.json['nodeCount'])
+        response = self.client.get('/nodes?ownerId='+str(user.id)+'&level=1&infoDepth=3&orderField=averageLeafRating&orderDir=asc&excludeRoot', headers=authHeaders)
+        self.assertEqual(200, response.status_code)
+        self.assertIn('nodeCount', response.json)
+        self.assertEqual(2, response.json['nodeCount'])
+        self.assertIn('nodes', response.json)
+        self.assertEqual(3, response.json['nodes'][0]['nodeInfo']['averageLeafRating'])
         
     def test_get_level_1_nodes_with_info_depth_3_order_by_average_leaf_rating_desc(self):
+        authHeaders = {
+            'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
+        }
+        user = self.editUser
+        mainNodes = create_two_main_nodes_for_owner(user, parent=self.rootNode)
+        leafRating = 0
+        need = False
+        haveTried = False
+        for mainNode in mainNodes:
+            need = not(need)
+            haveTried = not(haveTried)
+            subNodes = create_two_sub_nodes_for_parent_node(mainNode)
+            for subNode in subNodes:
+                for leaf in create_two_sub_nodes_for_parent_node(subNode):
+                    leafRating += 1
+                    leaf.rating = leafRating
+                    leaf.need = need
+                    leaf.haveTried = haveTried
+        db.session.commit()
+        # we now have a three level hierarchy we can test against
+        response = self.client.get('/nodes', headers=authHeaders, 
+                                   content_type='application/json')
+        self.assertEqual(200, response.status_code)
+        self.assertIn('nodeCount', response.json)
+        self.assertEqual(15, response.json['nodeCount'])
+        response = self.client.get('/nodes?ownerId='+str(user.id)+'&level=1&infoDepth=3&orderField=averageLeafRating&orderDir=desc&excludeRoot', headers=authHeaders)
+        self.assertEqual(200, response.status_code)
+        self.assertIn('nodeCount', response.json)
+        self.assertEqual(2, response.json['nodeCount'])
+        self.assertIn('nodes', response.json)
+        self.assertEqual(7, response.json['nodes'][0]['nodeInfo']['averageLeafRating'])
+        
+    def test_get_level_1_nodes_with_info_depth_3_order_by_average_leaf_rating_sc(self):
         authHeaders = {
             'Authorization': 'Basic %s' % b64encode(b"Edit:test").decode("ascii")
         }
