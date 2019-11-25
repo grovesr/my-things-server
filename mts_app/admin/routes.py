@@ -102,7 +102,6 @@ def addUser():
     return jsonify(user.buildPublicJson()), 201
 
 @admin_bp.route('/check/user/<string:username>', methods=['GET'])
-@auth.login_required
 def checkUser(username):
     userQuery = User.query.filter_by(username=username)
     if userQuery.count() == 0:

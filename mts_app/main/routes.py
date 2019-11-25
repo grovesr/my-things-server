@@ -40,7 +40,7 @@ def notFound(error):
     return make_response(jsonify({'error': error.description}), 404)
 
 @main_bp.errorhandler(405)
-def notFound(error):
+def notAllowed(error):
     return make_response(jsonify({'error': error.description}), 405)
 
 @main_bp.errorhandler(400)
