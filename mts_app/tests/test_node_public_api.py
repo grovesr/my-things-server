@@ -1054,6 +1054,22 @@ class NodeApiTests(MyThingsTest):
         self.assertIn('error', response.json)
         self.assertIn('User doesn''t have edit permission', response.json['error'])
         
+    def test_add_duplicate_main_node(self):
+        data={'owner':self.editUser.username, 'type': 'books', 'name': 'foo'}
+        response = self.client.post('/add/node',
+                                 data=json.dumps(data),
+                                 content_type='application/json',
+                                 headers=authHeaders)
+        self.assertEqual(201, response.status_code)
+        data={'owner':self.editUser.username, 'type': 'books', 'name': 'foo'}
+        response = self.client.post('/add/node',
+                                 data=json.dumps(data),
+                                 content_type='application/json',
+                                 headers=authHeaders)
+        self.assertEqual(400, response.status_code)  
+        self.assertIn('error', response.json)
+        self.assertIn('This node already exists. Try a different name.', response.json['error'])
+        
     def test_add_main_node_no_name(self):
         data={'owner':self.editUser.username, 'type': 'books'}
         response = self.client.post('/add/node',
