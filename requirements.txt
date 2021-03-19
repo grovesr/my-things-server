@@ -18,7 +18,7 @@ idna==2.7
 isbnlib==3.6.8
 iso3166==0.8
 itsdangerous==0.24
-Jinja2==2.10
+Jinja2==2.11.3
 kombu==4.2.1
 Mako==1.0.7
 MarkupSafe==1.0
