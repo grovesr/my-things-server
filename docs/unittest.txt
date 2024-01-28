@@ -1,0 +1,14 @@
+# to run unit tests start in the my-things-server folder. Make sure you have activated the virtual environment
+
+# to run all tests with coverage reports
+pytest --cov=mts_app --cov-report=term-missing
+
+# to run all tests with coverage report on selected module
+pytest --cov=mts_app.admin --cov-report=item-missing
+
+# to run selected tests
+pytest mts_app/tests/test_admin_api*
+
+# to run all tests only
+pytest
+
