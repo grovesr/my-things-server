@@ -34,8 +34,8 @@ class Node(db.Model):
     ownerId =       db.Column(db.Integer, db.ForeignKey('user.id'), unique=False, nullable=False)
     parentId =      db.Column(db.Integer, db.ForeignKey('node.id'), unique=False, nullable=True)
     owner =         db.relationship('User', lazy=True, back_populates='nodes')
-    children =      db.relationship('Node', backref=backref('parent', remote_side=[id]),
-                                    single_parent=True, lazy=True, cascade="all, delete, delete-orphan")
+    children =      db.relationship('Node', lazy=True, cascade="all, delete, delete-orphan")
+    parent =        db.relationship('Node', lazy=True, back_populates='children', remote_side=[id])
     __table_args__ = (UniqueConstraint('name', 'ownerId', 'parentId'),)
     childCount = 0
     

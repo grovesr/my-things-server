@@ -54,8 +54,7 @@ class DBSchemaTests(MyThingsTest):
         with self.assertRaises(IntegrityError) as cm:
             mn1 = Node(name='node:Main Node, user:' + user.username , parent=self.rootNode, owner=user)
             mn2 = Node(name='node:Main Node, user:' + user.username , parent=self.rootNode, owner=user)
-            db.session.add(mn1)
-            db.session.add(mn2)
+            db.session.add_all([mn1, mn2])
             db.session.commit()
         the_exception = cm.exception
         self.assertIn('Duplicate entry', the_exception.args[0])
@@ -67,8 +66,7 @@ class DBSchemaTests(MyThingsTest):
         with self.assertRaises(IntegrityError) as cm:
             mn1 = Node(name='node:Main Node, user:' + user.username , parent=node, owner=user)
             mn2 = Node(name='node:Main Node, user:' + user.username , parent=node, owner=user)
-            db.session.add(mn1)
-            db.session.add(mn2)
+            db.session.add_all([mn1, mn2])
             db.session.commit()
         the_exception = cm.exception
         self.assertIn('Duplicate entry', the_exception.args[0])
