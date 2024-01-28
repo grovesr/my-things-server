@@ -3,7 +3,7 @@ Created on Jun 22, 2018
 
 @author: https://bitbucket.org/zzzeek/sqlalchemy/wiki/UsageRecipes/DropEverything
 '''
-from sqlalchemy.engine import reflection
+from sqlalchemy import inspect
 #from sqlalchemy import create_engine
 from sqlalchemy.schema import (
     MetaData,
@@ -22,7 +22,7 @@ def drop_all_tables(db):
     # transactional DDL, i.e. Postgresql, MS SQL Server
     trans = conn.begin()
     
-    inspector = reflection.Inspector.from_engine(engine)
+    inspector = inspect(engine)
     
     # gather all data first before dropping anything.
     # some DBs lock after things have been dropped in 

@@ -31,6 +31,7 @@ class Config(object):
     EMAIL_USE_TLS = eval(secrets['MY_THINGS_EMAIL_USE_TLS'])
     EMAIL_USE_SSL = eval(secrets['MY_THINGS_EMAIL_USE_SSL'])
     SERVER_EMAIL = secrets['MY_THINGS_EMAIL_FROM_USER']
+    SQLALCHEMY_ENGINE_OPTIONS = {'pool_pre_ping':True}
     LOG_TO_STDOUT = False
     ADMINS = [SERVER_EMAIL] 
     

@@ -5,3 +5,5 @@ Flask-SQLAlchemy
 Flask-Migrate
 mysqlclient
 python-dateutil
+pytest
+pytest-cov
