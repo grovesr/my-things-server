@@ -52,8 +52,11 @@ class DBSchemaTests(MyThingsTest):
         user = create_user_with_index(username='Test', userindex=1)
         node = Node.query.filter_by(owner=self.adminUser).first()
         with self.assertRaises(IntegrityError) as cm:
-            user.nodes=[Node(name='node:Main Node, user:' + user.username , parent=self.rootNode, owner=user),
-                        Node(name='node:Main Node, user:' + user.username , parent=self.rootNode, owner=user)]
+            mn1 = Node(name='node:Main Node, user:' + user.username , parent=self.rootNode, owner=user)
+            mn2 = Node(name='node:Main Node, user:' + user.username , parent=self.rootNode, owner=user)
+            db.session.add(mn1)
+            db.session.add(mn2)
+            db.session.commit()
         the_exception = cm.exception
         self.assertIn('Duplicate entry', the_exception.args[0])
         
@@ -62,8 +65,11 @@ class DBSchemaTests(MyThingsTest):
         user = create_user_with_index(username='Test', userindex=1)
         node = Node.query.filter_by(owner=self.adminUser).first()
         with self.assertRaises(IntegrityError) as cm:
-            user.nodes=[Node(name='node:Main Node, user:' + user.username , parent=node, owner=user),
-                        Node(name='node:Main Node, user:' + user.username , parent=node, owner=user)]
+            mn1 = Node(name='node:Main Node, user:' + user.username , parent=node, owner=user)
+            mn2 = Node(name='node:Main Node, user:' + user.username , parent=node, owner=user)
+            db.session.add(mn1)
+            db.session.add(mn2)
+            db.session.commit()
         the_exception = cm.exception
         self.assertIn('Duplicate entry', the_exception.args[0])
         

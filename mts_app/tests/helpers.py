@@ -30,8 +30,9 @@ def create_two_main_nodes_for_owner(owner, parent=None, type='foo'):
 
 def create_two_sub_nodes_for_parent_node(parentNode):
     owner = parentNode.owner       
-    parentNode.children=[Node(name='node:Sub Node 1, parent:' + parentNode.name, parent=parentNode, owner=owner, type=parentNode.type),
-                         Node(name='node:Sub Node 2, parent:' + parentNode.name, parent=parentNode, owner=owner, type=parentNode.type)]
-    db.session.add(parentNode)
+    subnode1 = Node(name='node:Sub Node 1, parent:' + parentNode.name, parent=parentNode, owner=owner, type=parentNode.type)
+    subnode2 = Node(name='node:Sub Node 2, parent:' + parentNode.name, parent=parentNode, owner=owner, type=parentNode.type)
+    db.session.add(subnode1)
+    db.session.add(subnode2)
     db.session.commit()
     return parentNode.children

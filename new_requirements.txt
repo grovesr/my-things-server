@@ -1,0 +1,7 @@
+Flask
+Flask-HTTPAuth
+Flask-RESTful
+Flask-SQLAlchemy
+Flask-Migrate
+mysqlclient
+python-dateutil

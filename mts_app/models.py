@@ -33,7 +33,7 @@ class Node(db.Model):
     need =          db.Column(db.Boolean,     unique=False, nullable=False, default=False)
     ownerId =       db.Column(db.Integer, db.ForeignKey('user.id'), unique=False, nullable=False)
     parentId =      db.Column(db.Integer, db.ForeignKey('node.id'), unique=False, nullable=True)
-    owner =         db.relationship('User', lazy=True)
+    owner =         db.relationship('User', lazy=True, back_populates='nodes')
     children =      db.relationship('Node', backref=backref('parent', remote_side=[id]),
                                     single_parent=True, lazy=True, cascade="all, delete, delete-orphan")
     __table_args__ = (UniqueConstraint('name', 'ownerId', 'parentId'),)
@@ -221,10 +221,10 @@ class User(db.Model):
     id =            db.Column(db.Integer, primary_key=True)
     username =      db.Column(db.String(64),  index=True, unique=True, nullable=False)
     email =         db.Column(db.String(120),             unique=False, nullable=False)
-    password_hash = db.Column(db.String(128),             unique=False, nullable=False)
+    password_hash = db.Column(db.String(200),             unique=False, nullable=False)
     canEdit =       db.Column(db.Boolean,                 unique=False, nullable=False, default=False)
     isAdmin =       db.Column(db.Boolean,                 unique=False, nullable=False, default=False)
-    nodes =    db.relationship('Node', single_parent=True, lazy=True, 
+    nodes =    db.relationship('Node', single_parent=True, lazy=True, back_populates='owner',
                                     cascade="all, delete, delete-orphan")
     
     @validates('email')

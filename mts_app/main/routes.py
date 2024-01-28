@@ -155,8 +155,7 @@ def getLevel3Nodes(exactFilterBy={},
     # get all sub nodes of main nodes under root node with given owner and type              
     sub1 = db.session.query(Node.id)\
                   .filter(Node.parentId.in_(db.session.query(Node.id)\
-                  .filter_by(**ownerTypeFilterBy)))\
-                  .subquery()
+                  .filter_by(**ownerTypeFilterBy)))
     # get the depth 3 nodes and filter appropriately
     nodes = db.session.query(Node)\
                   .filter(Node.parentId.in_(sub1))\
@@ -175,9 +174,9 @@ def getLevel3Nodes(exactFilterBy={},
     if perPage is None:
         #paginate
         perPage = nodes.count()
-        nodePages = nodes.paginate(page=None, per_page=perPage)
+        nodePages = nodes.paginate(page=None, per_page=perPage, error_out=False)
     else:
-        nodePages = nodes.paginate(page=page, per_page=perPage)
+        nodePages = nodes.paginate(page=page, per_page=perPage, error_out=False)
     nodes = nodePages.items
     if not excludeRoot:
         nodes.append(rootNode)
@@ -219,9 +218,9 @@ def getLevel1Nodes(exactFilterBy={},
     if perPage is None:
         #paginate
         perPage = nodes.count()
-        nodePages = nodes.paginate(page=None, per_page=perPage)
+        nodePages = nodes.paginate(page=None, per_page=perPage, error_out=False)
     else:
-        nodePages = nodes.paginate(page=page, per_page=perPage)
+        nodePages = nodes.paginate(page=page, per_page=perPage, error_out=False)
     nodes = nodePages.items
     if(not excludeRoot):
         nodes.append(rootNode)
@@ -283,10 +282,10 @@ def getLevel1NodesWithInfo(exactFilterBy={},
     sub2 = db.session.query(sub1)\
                   .join(all1, sub1.c.id==all1.c.parentId)\
                   .distinct()\
-                  .add_columns(select([func.avg(Node.rating)]).where(Node.parentId==sub1.c.id).label('averageRating'),
-                               select([func.count()]).where(and_(Node.parentId==sub1.c.id, Node.need==True)).label('needChildren'),
-                               select([func.count()]).where(and_(Node.parentId==sub1.c.id, Node.haveTried==True)).label('haveTriedChildren'),
-                               select([func.count()]).where(Node.parentId==sub1.c.id).label('numberChildren'))\
+                  .add_columns(select(func.avg(Node.rating)).where(Node.parentId==sub1.c.id).label('averageRating'),
+                               select(func.count()).where(and_(Node.parentId==sub1.c.id, Node.need==True)).label('needChildren'),
+                               select(func.count()).where(and_(Node.parentId==sub1.c.id, Node.haveTried==True)).label('haveTriedChildren'),
+                               select(func.count()).where(Node.parentId==sub1.c.id).label('numberChildren'))\
                    .subquery()
     # get all main nodes
     main1 = db.session.query(Node)\
@@ -308,16 +307,16 @@ def getLevel1NodesWithInfo(exactFilterBy={},
     asub1=aliased(sub1)
     main1WithNumSubs = db.session.query(main1)\
                   .outerjoin(sub1, main1.c.id==sub1.c.parentId)\
-                  .add_columns(select([func.count()]).where(asub1.c.parentId==main1.c.id).label('numberSubs'))\
+                  .add_columns(select(func.count()).where(asub1.c.parentId==main1.c.id).label('numberSubs'))\
                   .distinct()\
                   .subquery()
     # outer join sub nodes to main nodes on sub.parentId=main.id
     rowssq = db.session.query(main1WithNumSubs)\
                   .outerjoin(sub2, main1WithNumSubs.c.id==sub2.c.parentId)\
-                  .add_columns(select([func.round(func.avg(asub2.c.averageRating))]).where(asub2.c.parentId==main1WithNumSubs.c.id).label('averageLeafRating'),
-                               select([func.sum(asub2.c.needChildren)]).where(asub2.c.parentId==main1WithNumSubs.c.id).label('needLeaves'),
-                               select([func.sum(asub2.c.haveTriedChildren)]).where(asub2.c.parentId==main1WithNumSubs.c.id).label('haveTriedLeaves'),
-                               select([func.sum(asub2.c.numberChildren)]).where(asub2.c.parentId==main1WithNumSubs.c.id).label('numberLeaves'))\
+                  .add_columns(select(func.round(func.avg(asub2.c.averageRating))).where(asub2.c.parentId==main1WithNumSubs.c.id).label('averageLeafRating'),
+                               select(func.sum(asub2.c.needChildren)).where(asub2.c.parentId==main1WithNumSubs.c.id).label('needLeaves'),
+                               select(func.sum(asub2.c.haveTriedChildren)).where(asub2.c.parentId==main1WithNumSubs.c.id).label('haveTriedLeaves'),
+                               select(func.sum(asub2.c.numberChildren)).where(asub2.c.parentId==main1WithNumSubs.c.id).label('numberLeaves'))\
                    .distinct()\
                    .subquery()
     if orderField == 'averageLeafRating':
@@ -330,9 +329,9 @@ def getLevel1NodesWithInfo(exactFilterBy={},
     if perPage is None:
         #paginate
         perPage = rows.count()
-        rowPages = rows.paginate(page=None, per_page=perPage)
+        rowPages = rows.paginate(page=None, per_page=perPage, error_out=False)
     else:
-        rowPages = rows.paginate(page=page, per_page=perPage)
+        rowPages = rows.paginate(page=page, per_page=perPage, error_out=False)
     rows = rowPages.items
     nodes = []
     for row in rows:
@@ -485,9 +484,9 @@ def getNodes():
     if perPage is None:
         #paginate
         perPage = nodes.count()
-        nodePages = nodes.paginate(page=None, per_page=perPage)
+        nodePages = nodes.paginate(page=None, per_page=perPage, error_out=False)
     else:
-        nodePages = nodes.paginate(page=page, per_page=perPage)
+        nodePages = nodes.paginate(page=page, per_page=perPage, error_out=False)
     nodes = nodePages.items
     if(not excludeRoot):
         rootNode = Node.query.filter_by(parent=None).first()
@@ -567,7 +566,7 @@ def addNode():
         if 'haveTried' in request.json:
             node.haveTried = request.json['haveTried']
         if 'dateTried' in request.json:
-            if request.json['dateTried'] is not None and request.json['dateTried'] is not '' :
+            if request.json['dateTried'] is not None and request.json['dateTried'] != '' :
                 try:
                     node.dateTried = parse(request.json['dateTried'])
                 except ValueError:
@@ -575,7 +574,7 @@ def addNode():
         if 'review' in request.json:
             node.review = request.json['review']
         if 'dateReviewed' in request.json:
-            if request.json['dateReviewed'] is not None and request.json['dateReviewed'] is not '':
+            if request.json['dateReviewed'] is not None and request.json['dateReviewed'] != '':
                 try:
                     node.dateReviewed = parse(request.json['dateReviewed'])
                 except ValueError:
@@ -617,7 +616,7 @@ def updateNode(nodeId):
         if 'haveTried' in request.json:
             node.haveTried = request.json['haveTried']
         if 'dateTried' in request.json:
-            if request.json['dateTried'] is not None and request.json['dateTried'] is not '' :
+            if request.json['dateTried'] is not None and request.json['dateTried'] != '' :
                 try:
                     node.dateTried = parse(request.json['dateTried'])
                 except ValueError:
@@ -627,7 +626,7 @@ def updateNode(nodeId):
         if 'review' in request.json:
             node.review = request.json['review']
         if 'dateReviewed' in request.json:
-            if request.json['dateReviewed'] is not None and request.json['dateReviewed'] is not '':
+            if request.json['dateReviewed'] is not None and request.json['dateReviewed'] != '':
                 try:
                     node.dateReviewed = parse(request.json['dateReviewed'])
                 except ValueError:
