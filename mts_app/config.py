@@ -19,6 +19,9 @@ class Config(object):
     DATABASE_USER = secrets['DATABASE_USER']
     DATABASE_PASSWORD = secrets['DATABASE_PASSWORD']
     DATABASE = secrets['DATABASE']
+    TEST_DATABASE_USER = secrets['TEST_DATABASE_USER']
+    TEST_DATABASE_PASSWORD = secrets['TEST_DATABASE_PASSWORD']
+    TEST_DATABASE = secrets['TEST_DATABASE']
     DEBUG = os.environ.get('DEBUG') or False
     SQLALCHEMY_TRACK_MODIFICATIONS = os.environ.get('SQLALCHEMY_TRACK_MODIFICATIONS') or False
     USE_I18N = os.environ.get('USE_I8N') or True
@@ -51,9 +54,9 @@ class TestingConfig(Config):
     TESTING = True
     SERVER_NAME='localhost:5000'
     SQLALCHEMY_DATABASE_URI = ('mysql://' + 
-            Config.DATABASE_USER + ':' +
-            Config.DATABASE_PASSWORD + '@' + 
-            (os.environ.get('TEST_DB') or 'localhost/my_things_test'))
+            Config.TEST_DATABASE_USER + ':' +
+            Config.TEST_DATABASE_PASSWORD + '@' + 
+            Config.TEST_DATABASE)
     WTF_CSRF_ENABLED = False
 
 
