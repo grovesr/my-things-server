@@ -154,6 +154,11 @@ def updateUser(username):
     if not request.json:
         raise BadRequest('Not json data')
     user = userQuery.first()
+    if 'password' in request.json:
+        try:
+            user.set_password(request.json['password'])
+        except AssertionError as e:
+            raise BadRequest('password error: ' + str(e))
     if 'username' in request.json:
         try:
             user.username = request.json['username']

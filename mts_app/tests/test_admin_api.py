@@ -239,12 +239,14 @@ class AdminApiTests(MyThingsTest):
         self.assertEqual(response.json['error'], 'User not found')
         
     def test_update_user(self):
-        data = {"email":"test1@example.org"}
+        data = {"email":"test1@example.org", 'password':'foobar'}
         response = self.client.put('/admin/user/' + self.readonlyUser.username, headers=authHeaders,
                                 data=json.dumps(data), content_type='application/json')
         self.assertEqual(response.status_code, 200)
         self.assertIn('email', response.json)
         self.assertEqual('test1@example.org', response.json['email'])
+        user = User.query.filter_by(username='Readonly').first()
+        self.assertTrue(user.check_password('foobar'))
         
     def test_update_invalid_user(self):
         data = {"email":"test1@example.org"}
